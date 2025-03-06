@@ -150,55 +150,59 @@ int Server::acceptClient()
 
 void Server::handleClientRead(size_t index)
 {
-    char buffer[8192] = {0};
+    char buffer[1024] = {0};
     int client_fd = this->pollfds[index].fd;
-    ssize_t val_recv;
+    // ssize_t val_recv;
 
-    while ((val_recv = recv(client_fd, buffer, sizeof(buffer) - 1, 0)) && val_recv > 0)
-    {
-        // Check if the buffer is full
-        // if (strlen(buffer) >= sizeof(buffer) - 1)
-        // {
-        //     std::cerr << "Buffer overflow. Closing connection." << std::endl;
-        //     closeClientConnection(index);
-        //     return;
-        // }
-        // Clear the buffer for the next read
-        buffer[val_recv] = '\0';
-        std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
-        std::cout << "Request: " << buffer << std::endl;
-        memset(buffer, 0, sizeof(buffer));
-    }
-    
-    
-    // ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    
-    // if (bytes_read <= 0)
+    // while ((val_recv = recv(client_fd, buffer, sizeof(buffer) - 1, 0)) && val_recv > 0)
     // {
-    //     // Connection closed or error
-    //     if (bytes_read == 0)
-    //     {
-    //         std::cout << "Client disconnected. Socket FD: " << client_fd << std::endl;
-    //     }
-    //     else 
-    //     {
-    //         std::cerr << "Recv error: " << strerror(errno) << std::endl;
-    //     }
-    //     closeClientConnection(index);
-    //     return;
+    //     // Check if the buffer is full
+    //     // if (strlen(buffer) >= sizeof(buffer) - 1)
+    //     // {
+    //     //     std::cerr << "Buffer overflow. Closing connection." << std::endl;
+    //     //     closeClientConnection(index);
+    //     //     return;
+    //     // }
+    //     // Clear the buffer for the next read
+    //     buffer[val_recv] = '\0';
+    //     std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
+    //     std::cout << "Request: " << buffer << std::endl;
+    //     memset(buffer, 0, sizeof(buffer));
     // }
-
-    // buffer[bytes_read] = '\0';
     
-    // Process the request
-    // this->Clients[index - 1].get_request().set_s_request(std::string(buffer));
-    // check_request(this->Clients[index - 1]);
+    
+    ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    
+    if (bytes_read <= 0)
+    {
+        // Connection closed or error
+        if (bytes_read == 0)
+        {
+            std::cout << "Client disconnected. Socket FD: " << client_fd << std::endl;
+        }
+        else 
+        {
+            std::cerr << "Recv error: " << strerror(errno) << std::endl;
+        }
+        closeClientConnection(index);
+        return;
+    }
 
+    buffer[bytes_read] = '\0';
     std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
     std::cout << "Request: " << buffer << std::endl;
+    
+    // Process the request
+    std::cout << "client fd :" <<  index << std::endl;
+    std::cout << this->Clients[index - 1].get_request().get_s_request() << std::endl;
+    exit(1);
+    // check_request(this->Clients[index - 1]);
+
+    // std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
+    // std::cout << "Request: " << buffer << std::endl;
 
     // Prepare to send response
-    this->pollfds[index].events = POLLOUT;
+    // this->pollfds[index].events = POLLOUT; lach hadii 
 }
 
 // void Server::handleClientWrite(size_t index)
@@ -221,7 +225,7 @@ void Server::handleClientRead(size_t index)
 //     // If file exists, send file contents
 //     if (fileStream.is_open())
 //     {
-//         char file_buffer[8192];
+//         char file_buffer[1024];
 //         while (fileStream.read(file_buffer, sizeof(file_buffer)))
 //         {
 //             ssize_t bytes_sent = send(client_fd, file_buffer, fileStream.gcount(), 0);
