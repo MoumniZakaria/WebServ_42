@@ -205,9 +205,9 @@ int main(int ac, char **av)
     (void)av;
     try
     {
-        std::cout << "Server is running on port 8080" << std::endl;
-        Server SRV;
-        SRV.startServer();
+      
+        Server zakaria;
+        zakaria.startServer();
         
     }
     catch(const std::exception& e)

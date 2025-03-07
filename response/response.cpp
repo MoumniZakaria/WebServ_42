@@ -18,6 +18,6 @@ Response::~Response(){};
 
 Response::Response()
 {
-    fileStream = NULL;
+    fileStream = new std::ifstream();
     response = "";
 };

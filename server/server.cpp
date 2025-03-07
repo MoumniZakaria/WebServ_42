@@ -145,6 +145,10 @@ int Server::acceptClient()
     this->Clients.push_back(Client(new_socket, addr_client));
     
     std::cout << "New client connected. Socket FD: " << new_socket << std::endl;
+    // std::cout << "--------------------------------------------------------" << std::endl;
+    // std::cout << "Client ID: " << this->Clients.back().get_client_id() << std::endl;
+    // std::cout << "Client ID: " << &this->Clients.back().get_request() << std::endl;
+    // std::cout << "--------------------------------------------------------" << std::endl;
     return 0;
 }
 
@@ -152,25 +156,8 @@ void Server::handleClientRead(size_t index)
 {
     char buffer[1024] = {0};
     int client_fd = this->pollfds[index].fd;
-    // ssize_t val_recv;
-
-    // while ((val_recv = recv(client_fd, buffer, sizeof(buffer) - 1, 0)) && val_recv > 0)
-    // {
-    //     // Check if the buffer is full
-    //     // if (strlen(buffer) >= sizeof(buffer) - 1)
-    //     // {
-    //     //     std::cerr << "Buffer overflow. Closing connection." << std::endl;
-    //     //     closeClientConnection(index);
-    //     //     return;
-    //     // }
-    //     // Clear the buffer for the next read
-    //     buffer[val_recv] = '\0';
-    //     std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
-    //     std::cout << "Request: " << buffer << std::endl;
-    //     memset(buffer, 0, sizeof(buffer));
-    // }
     
-    
+    // Read data from client
     ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytes_read <= 0)
@@ -192,14 +179,14 @@ void Server::handleClientRead(size_t index)
     std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
     std::cout << "Request: " << buffer << std::endl;
     
-    // Process the request
-    std::cout << "client fd :" <<  index << std::endl;
-    std::cout << this->Clients[index - 1].get_request().get_s_request() << std::endl;
-    exit(1);
-    // check_request(this->Clients[index - 1]);
 
-    // std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
-    // std::cout << "Request: " << buffer << std::endl;
+    // Set request data
+    this->Clients[index - 1].get_request().set_s_request(buffer);
+    check_request(this->Clients[index - 1]);
+
+    // int v_read;
+    // while(v_read = r)
+
 
     // Prepare to send response
     // this->pollfds[index].events = POLLOUT; lach hadii 
@@ -266,6 +253,14 @@ void Server::handleClientRead(size_t index)
 
 void Server::closeClientConnection(size_t index)
 {
+    Client& client = this->Clients[index - 1];
+
+    if (client.get_Alive())
+    {
+        // client.set_Alive(false);
+        // this->pollfds[index].events = POLLIN;
+        // return;
+    }
     close(this->pollfds[index].fd);
     this->pollfds.erase(this->pollfds.begin() + index);
     this->Clients.erase(this->Clients.begin() + index - 1);

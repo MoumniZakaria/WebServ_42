@@ -8,7 +8,8 @@ class Client{
         struct sockaddr_in Client_Addr;
         Request *request_object;
         Response *response_object;
-          bool keep_alive;
+        bool keep_alive;
+        bool all_recv;
         
     public:
         void set_client_id(int fd);

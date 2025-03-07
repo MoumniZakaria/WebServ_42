@@ -166,19 +166,19 @@ void parse_request(Client &client)
 
 
 void check_request(Client & client){
-    std::cout << "check_request" << std::endl;
-    std::cout << "request : " << &client.get_request() << std::endl;
-    std::cout << "response : " <<  &client.get_response()<< std::endl;
+    // std::cout << "check_request" << std::endl;
+    // std::cout << "request : " << &client.get_request() << std::endl;
+    // std::cout << "response : " <<  &client.get_response()<< std::endl;
 
 
-    // std::string method = client.get_request().get_method();
+    std::string method = client.get_request().get_method();
 
-    // if (client.get_request().get_method().empty()){
-    //     parse_request(client);
-    // }
-    // else{
-    //     hanlde_post_request(client , 0 , "ssss");
-    // }
+    if (client.get_request().get_method().empty()){
+        parse_request(client);
+    }
+    else{
+        hanlde_post_request(client , 0 , "ssss");
+    }
 }
 
 
