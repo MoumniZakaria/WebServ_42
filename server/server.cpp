@@ -59,7 +59,7 @@ void Server::startServer()
                     handleClientRead(i);
                 }
             }
-
+                handleClientWrite(i);
             // if (this->pollfds[i].revents & POLLOUT)
             // {
             //     // Ready to send response
@@ -175,21 +175,22 @@ void Server::handleClientRead(size_t index)
         return;
     }
 
-    buffer[bytes_read] = '\0';
-    std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
-    std::cout << "Request: " << buffer << std::endl;
+    std::string req(buffer, bytes_read);
+    // buffer[bytes_read] = '\0';
+    // std::cout << "Received request from client. Socket FD: " << client_fd << std::endl;
+    // std::cout << "Request1: " << req << std::endl;
     
 
     // Set request data
-    this->Clients[index - 1].get_request().set_s_request(buffer);
+    this->Clients[index - 1].get_request().set_s_request(req);
+    std::cout << "Request2: " << this->Clients[index - 1].get_request().get_s_request() << std::endl;
     check_request(this->Clients[index - 1]);
 
-    // int v_read;
-    // while(v_read = r)
 
 
     // Prepare to send response
-    // this->pollfds[index].events = POLLOUT; lach hadii 
+    // if ( req recv 100%)
+    // this->pollfds[index].events = POLLOUT;
 }
 
 // void Server::handleClientWrite(size_t index)
@@ -223,7 +224,6 @@ void Server::handleClientRead(size_t index)
 //                 return;
 //             }
 //         }
-        
 //         // Send any remaining bytes
 //         if (fileStream.gcount() > 0)
 //         {
@@ -235,7 +235,6 @@ void Server::handleClientRead(size_t index)
 //                 return;
 //             }
 //         }
-        
 //         fileStream.close();
 //     }
 
