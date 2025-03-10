@@ -22,6 +22,9 @@ class Client{
         void set_Alive(bool keep);
         bool get_Alive();
 
+        void set_all_recv(bool check);
+        bool get_all_recv();
+
         Client(int fd, struct sockaddr_in Add);
         Client();
         ~Client(){};

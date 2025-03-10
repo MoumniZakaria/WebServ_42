@@ -12,6 +12,7 @@ Client::Client(int fd, struct sockaddr_in Add)
     client_id = fd;
     Client_Addr = Add;
     keep_alive = true;
+    all_recv = false;
     std::cout << "Client created with fd: " << client_id << std::endl;
     std::cout << "Client created with req: " << request_object << std::endl;
 }
@@ -46,4 +47,13 @@ void Client::set_Alive(bool keep){
 
 bool Client::get_Alive(){
     return keep_alive;
+}
+
+
+bool Client::get_all_recv(){
+    return all_recv;
+}
+
+void Client::set_all_recv(bool check){
+    all_recv = check;
 }
