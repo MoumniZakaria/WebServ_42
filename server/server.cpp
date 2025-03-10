@@ -46,6 +46,7 @@ void Server::startServer()
             if (this->pollfds[i].revents & POLLIN)
             {
                 if (this->pollfds[i].fd == this->fd_server)
+                {
                     // New connection
                     if (acceptClient() != 0)
                     {
@@ -57,16 +58,7 @@ void Server::startServer()
                     // Existing client data
                     handleClientRead(i);
                 }
-            // std::string Resp = "HTTP/1.1 200 OK\r\n"
-            //                     "Content-Type: text/plain\r\n"
-            //                     "Content-Length: 24\r\n\r\n"
-            //                     "Request received successfully";
-            // send(this->pollfds[i].fd, Resp.c_str(), Resp.size(), 0);
-
             }
-            
-
-
                 // handleClientWrite(i);
             // if (this->pollfds[i].revents & POLLOUT)
             // {
@@ -74,8 +66,8 @@ void Server::startServer()
             //     handleClientWrite(i);
             // }
         }
+    }
 }
-
 
 int Server::createServer()
 {
