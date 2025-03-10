@@ -57,15 +57,17 @@ void Server::startServer()
                 {
                     // Existing client data
                     handleClientRead(i);
+                    this->Clients[i - 1].set_all_recv(true);
                 }
             }
             if (this->Clients[i - 1].get_all_recv())
             {
+                std::cout << "Ready to send response" << std::endl;
                 // Ready to send response
+                handleClientWrite(i);
                 if (this->pollfds[i].revents & POLLOUT)
                 {
                     // Handle outgoing data
-                    handleClientWrite(i);
                 }
                 // check this if it is non stopping sending of data
             }
@@ -185,10 +187,10 @@ void Server::handleClientRead(size_t index)
 
 
     // Prepare to send response
-    if (this->Clients[index - 1].get_all_recv())
-    {
-        this->pollfds[index].events = POLLOUT;
-    }
+    // if (this->Clients[index - 1].get_all_recv())
+    // {
+    //     this->pollfds[index].events = POLLOUT;
+    // }
 }
 
 void Server::handleClientWrite(size_t index)
@@ -196,7 +198,8 @@ void Server::handleClientWrite(size_t index)
     Client& client = this->Clients[index - 1];
     int client_fd = this->pollfds[index].fd;
     
-    std::string response = client.get_response().get_response();
+    // std::string response = client.get_response().get_response();
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nHello World!";
     std::ifstream& fileStream = client.get_response().get_fileStream();
     // std::string file ;
     
