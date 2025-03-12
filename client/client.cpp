@@ -1,9 +1,7 @@
 #include "../webserver.hpp"
 
 Client::Client() : client_id(-1) {
-    
 }
-
 
 Client::Client(int fd, struct sockaddr_in Add)
 {
@@ -16,6 +14,7 @@ Client::Client(int fd, struct sockaddr_in Add)
     std::cout << "Client created with fd: " << client_id << std::endl;
     std::cout << "Client created with req: " << request_object << std::endl;
 }
+
 int  Client::get_client_id(){
     return client_id;
 }
@@ -40,6 +39,20 @@ Response&  Client::get_response(){
 void Client::set_response(Response & R) {
         response_object = &R;
 }
+
+void Client::fill_map(std::string key , std::string value){
+    form_data[key] = value;
+}
+
+
+void Client::print_map(){
+    std::map<std::string , std::string >::iterator it = form_data.begin();
+    while(it != form_data.end()){
+        std::cout << it->first << " ---------> " << it->second << std::endl;
+        ++it ;
+    }
+}
+
 
 void Client::set_Alive(bool keep){
     keep_alive = keep;

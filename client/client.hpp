@@ -8,8 +8,11 @@ class Client{
         struct sockaddr_in Client_Addr;
         Request *request_object;
         Response *response_object;
+        std::map<std::string , std::string > form_data;
         bool keep_alive;
         bool all_recv;
+        size_t bytes_sent;
+        size_t bytes_read;
         
     public:
         void set_client_id(int fd);
@@ -26,6 +29,9 @@ class Client{
         bool get_all_recv();
 
         Client(int fd, struct sockaddr_in Add);
+
+        void fill_map(std::string key , std::string value);
+        void print_map();
         Client();
         ~Client(){};
 };
