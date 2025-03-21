@@ -148,7 +148,6 @@ int Server::acceptClient()
     new_pollfd.events = POLLIN;
     new_pollfd.revents = 0;
 
-   
     this->pollfds.push_back(new_pollfd);
     this->Clients.push_back(Client(new_socket, addr_client));
     
@@ -183,7 +182,7 @@ void Server::handleClientRead(size_t index)
 
     // Set request data
     this->Clients[index - 1].get_request().set_s_request(req);
-    // std::cout << "Request2: " << this->Clients[index - 1].get_request().get_s_request() << std::endl;
+    std::cout << "Request2: " << this->Clients[index - 1].get_request().get_s_request() << std::endl;
     check_request(this->Clients[index - 1]);
 
 
@@ -199,40 +198,50 @@ void Server::handleClientWrite(size_t index)
 {
     Client& client = this->Clients[index - 1];
     int client_fd = this->pollfds[index].fd;
-    // std::string response = client.get_response().get_response();
-    // std::cout << "respose :\n" << response << std::endl;
-    ssize_t bytes_sent = send(client_fd, client.get_response().get_response().c_str(), client.get_response().get_response().length(), 0);
-    if (bytes_sent < 0)
+    
+    std::string response = client.get_response().get_response();
+    // std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nHello World!";
+    std::ifstream &fileStream = client.get_response().get_fileStream();
+    // std::string file ;
+    
+    // Send headers
+    ssize_t sent = send(client_fd, response.c_str(), response.length(), 0);
+    if (sent < 0)
     {
         std::cerr << "Send error: " << strerror(errno) << std::endl;
         closeClientConnection(index);
         return;
     }
-    char buffer[8192];
-    size_t total_sent = 0;
 
-    while (client.get_response().get_fileStream().good() && !client.get_response().get_fileStream().eof())
+    // If file exists, send file contents
+    if (fileStream.is_open())
     {
-        std::cout << "heeeere" << std::endl;
-        client.get_response().get_fileStream().read(buffer, sizeof(buffer));
-        size_t bytes_read = client.get_response().get_fileStream().gcount();
-        if (bytes_read == 0)
-            break;
-        size_t bytes_sent = 0;
-        while (bytes_sent < bytes_read)
+        // std::cout << "here" << std::endl;
+        char file_buffer[1024];
+        while (fileStream.read(file_buffer, sizeof(file_buffer) -1))
         {
-            ssize_t result = send(client_fd, buffer + bytes_sent, bytes_read - bytes_sent, 0);
-
-            if (result <= 0)
+            ssize_t bytes_sent = send(client_fd, file_buffer, fileStream.gcount(), 0);
+            if (bytes_sent < 0)
             {
-                client.get_response().get_fileStream().close();
+                std::cerr << "File send error: " << strerror(errno) << std::endl;
+                closeClientConnection(index);
                 return;
             }
-
-            bytes_sent += result;
-            total_sent += result;
         }
+        // Send any remaining bytes
+        if (fileStream.gcount() > 0)
+        {
+            ssize_t bytes_sent = send(client_fd, file_buffer, fileStream.gcount(), 0);
+            if (bytes_sent < 0)
+            {
+                std::cerr << "Final file send error: " << strerror(errno) << std::endl;
+                closeClientConnection(index);
+                return;
+            }
+        }
+        fileStream.close();
     }
+
     // Close connection if not keep-alive
     if (!client.get_Alive())
     {
@@ -247,14 +256,14 @@ void Server::handleClientWrite(size_t index)
 
 void Server::closeClientConnection(size_t index)
 {
-    // Client& client = this->Clients[index - 1];
+    Client& client = this->Clients[index - 1];
 
-    // if (client.get_Alive())
-    // {
-    //     // client.set_Alive(false);
-    //     // this->pollfds[index].events = POLLIN;
-    //     return;
-    // }
+    if (client.get_Alive())
+    {
+        // client.set_Alive(false);
+        // this->pollfds[index].events = POLLIN;
+        return;
+    }
     close(this->pollfds[index].fd);
     this->pollfds.erase(this->pollfds.begin() + index);
     this->Clients.erase(this->Clients.begin() + index - 1);

@@ -80,13 +80,13 @@ std::string fill_response(std::ifstream& fileStream,  std::string& filePath) {
         return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
     }
 
-    // std::streampos fileSize = fileStream.tellg();
+    std::streampos fileSize = fileStream.tellg();
     fileStream.seekg(0, std::ios::beg);
 
     std::ostringstream response;
     response << "HTTP/1.1 200 OK\r\n";
     response << "Content-Type:" + getContentType(filePath)  + "\r\n";
-    // response << "Content-Length: " << fileSize << "\r\n";make
+    response << "Content-Length: " << fileSize << "\r\n";
     response << "Accept-Ranges: bytes\r\n";
     response << "Connection: close\r\n";
     response << "X-Content-Type-Options: nosniff\r\n";

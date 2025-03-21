@@ -11,8 +11,6 @@ class Client{
         std::map<std::string , std::string > form_data;
         bool keep_alive;
         bool all_recv;
-        size_t bytes_sent;
-        size_t bytes_read;
         
     public:
         void set_client_id(int fd);
