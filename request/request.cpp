@@ -1,12 +1,11 @@
 #include "../webserver.hpp"
 
-
 Request::Request()
 {
     index = false;
-    request_end = false;
-    // s_request = NULL;
-};
+    is_string_req_send = false;
+
+}
 Request::~Request() {};
 
 const std::string &Request::get_method()
@@ -29,7 +28,7 @@ void Request::set_method(std::string &name)
     method = name;
 }
 
-void Request::set_s_request(std::string  req)
+void Request::set_s_request(std::string req)
 {
     // free(s_request);
     s_request = req;
@@ -51,21 +50,23 @@ void Request::set_version(std::string &name)
     version = name;
 }
 
-bool Request::get_parse_index(){
+bool Request::get_parse_index()
+{
     return index;
 }
 
-bool Request::get_request_end(){
-    return request_end;
-}
-
-void Request::set_request_end(bool index){
-    request_end = index;
-}
-
-
-void Request::set_parse_index(bool index){
+void Request::set_parse_index(bool index)
+{
     this->index = index;
+}
+
+size_t Request::get_content_length()
+{
+    return content_length;
+}
+void Request::set_content_length(size_t length)
+{
+    content_length = length;
 }
 
 bool is_allowed_char(char c)
@@ -107,7 +108,7 @@ std::string removeslashes(const std::string &line)
     return result;
 }
 
-bool Request::fill_headers_map(std::istringstream &ob, std::string &res)
+bool Request::fill_headers_map(std::istringstream &ob, std::string &res, Client &client)
 {
     std::string line, key, value;
     while (std::getline(ob, line))
@@ -125,14 +126,14 @@ bool Request::fill_headers_map(std::istringstream &ob, std::string &res)
             key = line.substr(pos + 1);
         if (key.empty())
         {
-            get_error_res(res, 400);
+            get_error_res(res, 400, client);
             headers_map.clear();
             return false;
         }
         if (key[0] == 32)
         {
             // std::cout << "400 Bad requeste 2 "<< "|" << (int)key[0] << "|"  << std::endl;
-            get_error_res(res, 400);
+            get_error_res(res, 400, client);
             headers_map.clear();
             return false;
         }
@@ -153,26 +154,7 @@ std::string Request::get_map_values(std::string key)
     return "NULL";
 }
 
-size_t Request::get_length()
-{
-    return length;
-}
-void Request::set_length(size_t len)
-{
-    length = len;
-}
-
-int Request::get_bodyStart()
-{
-    return BodyStart;
-}
-
-void Request::set_bodyStart(int pos)
-{
-    BodyStart = pos;
-}
-
-bool out_root_dir(std::string &pa, std::string &res)
+bool out_root_dir(std::string &pa, std::string &res, Client &client)
 {
     char **str = ft_split(pa.c_str(), '/');
     int entry = 0;
@@ -185,7 +167,7 @@ bool out_root_dir(std::string &pa, std::string &res)
             entry++;
         if (sorty > entry)
         {
-            get_error_res(res, 400);
+            get_error_res(res, 400, client);
             return false;
         }
     }
@@ -224,75 +206,58 @@ bool is_upper(std::string line)
     return true;
 }
 
-std::string get_file_ex(std::string name){
-    std::string str = "bat";
-    if (name == "ation/pdf")
-        str = "file.pdf";
-    else if (name == "mp4")
-        str = "file.mp4";
-    else if (name == "png")
-        str = "file.png";
-    else if (name == "jpg")
-        str = "file.jpg";
-    else if (name == "jpeg")
-        str = "file.jpeg";
-    return str;
-}
-
-
-
-
-std::ofstream file; 
+std::ofstream file;
 void hanlde_post_request(Client &client)
 {
-    static int first ;
+    static int first;
+    static size_t writed;
+
     if (!first)
     {
         first = 10;
         std::string content_type = client.get_request().get_map_values("Content-Type");
-        std::string file_extension;
-        if (content_type.size() > 7)
-        {
-            file_extension = content_type.substr(7);
-            for (size_t i = 0; i < file_extension.size(); i++)
-            {
-                if (file_extension[i] < 32 || file_extension[i] > 126)
-                {
-                    file_extension.resize(i);
-                    break;
-                }
-            }
-        }
-        // std::cout << file_extension << std::endl;
-        std::string file_name = get_file_ex(file_extension);
+        size_t pos = content_type.find("/");
+        std::string extension = content_type.substr(pos + 1);
+        trim_non_printable(extension);
+
+        std::string file_name = root + "/" + generate_file_names(extension);
+        // std::cout << file_name << std::endl;
+        // exit(0);
         file.open(file_name.c_str());
         if (!file.is_open())
         {
             std::cerr << "Error: Could not open file " << file_name << std::endl;
             return;
         }
-        file  << client.get_request().get_s_request() << std::flush;
-            if (file.fail())
-            {
-                std::cerr << "Error: Failed to write to file " << file_name << std::endl;
-                file.close();
-                return;
-            }
+        file << client.get_request().get_s_request() << std::flush;
+        if (file.fail())
+        {
+            std::cerr << "Error: Failed to write to file " << file_name << std::endl;
+            file.close();
+            return;
+        }
+        writed += client.get_request().get_s_request().size();
+        if (writed >= client.get_request().get_content_length())
+            client.set_all_recv(true);
+
     }
     else
     {
         if (!file.is_open())
         {
             std::cerr << "Error: File is not open" << std::endl;
-            exit (0);
+            exit(0);
             return;
         }
         file << client.get_request().get_s_request() << std::flush;
+        writed += client.get_request().get_s_request().size();
         if (file.fail())
         {
             std::cerr << "Error: Failed to write to file" << std::endl;
             file.close();
             return;
         }
+        if (writed >= client.get_request().get_content_length())
+            client.set_all_recv(true);
     }
 }

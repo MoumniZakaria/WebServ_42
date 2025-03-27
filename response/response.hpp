@@ -8,6 +8,7 @@ class Response
         std::ifstream *fileStream;
         std::string response;
         bool Ready_to_send;
+        int response_status;
     public:
         std::ifstream & get_fileStream();
         void set_fileStream(std::ifstream& object);
@@ -17,6 +18,11 @@ class Response
 
         bool get_response_index();
         void set_response_index(bool index);
+
+
+        int  get_response_status();
+        void set_response_status(int  index);
+
 
         Response();
         ~Response();

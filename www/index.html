@@ -3,11 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Welcome Page</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <center>
-        <h1>hello this is webserv default page</h1>
-    </center>
+    <div class="background" id="background"></div>
+    
+    <div class="welcome-container">
+        <h1>Welcome to one of the best web servers in the world!</h1>
+        <p>We're glad you're here. Explore and enjoy your stay!</p>
+        <button onclick="showCards()">Get Started</button>
+    </div>
+    
+    <div class="cards-container" id="cards-container">
+        <div class="card">
+            <img src="https://cdn.intra.42.fr/users/bcefd7533eeb366934477185f89a8375/kid-ouis.jpg" alt="Image 1">
+            <p>Kid-ouis</p>
+        </div>
+        <div class="card">
+            <img src="https://cdn.intra.42.fr/users/4b3108a2c25c9aaa526f1f9740f79acc/abechcha.jpg" alt="Image 2">
+            <p>Abechcha</p>
+        </div>
+        <div class="card">
+            <img src="https://cdn.intra.42.fr/users/842bd435e0917d8edf312c76a32efd5a/zmoumni.jpg" alt="Image 3">
+            <p>Zmoumni</p>
+        </div>
+    </div>
+    
+    <script>
+        // Create floating bubbles
+        function createBubbles() {
+            const background = document.getElementById('background');
+            const bubbleCount = 15;
+            
+            for (let i = 0; i < bubbleCount; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                
+                // Random properties
+                const size = Math.random() * 100 + 50;
+                const positionX = Math.random() * 100;
+                const delay = Math.random() * 15;
+                const duration = Math.random() * 15 + 20;
+                
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${positionX}%`;
+                bubble.style.animationDelay = `${delay}s`;
+                bubble.style.animationDuration = `${duration}s`;
+                
+                background.appendChild(bubble);
+            }
+        }
+        
+        // Show cards function
+        function showCards() {
+            document.getElementById('cards-container').style.display = 'flex';
+        }
+        
+        // Initialize animations when page loads
+        window.onload = function() {
+            createBubbles();
+        };
+    </script>
 </body>
 </html>

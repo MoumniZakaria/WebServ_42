@@ -8,7 +8,7 @@ class Client{
         struct sockaddr_in Client_Addr;
         Request *request_object;
         Response *response_object;
-        std::map<std::string , std::string > form_data;
+        std::map<std::string , std::string> form_data;
         bool keep_alive;
         bool all_recv;
         
@@ -32,4 +32,5 @@ class Client{
         void print_map();
         Client();
         ~Client(){};
+        void reset();
 };

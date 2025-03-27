@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../webserver.hpp"
-
+class Client;
 
 class Request
 {
@@ -11,14 +11,11 @@ class Request
         std::string path;
         std::map<std::string,std::string> headers_map;
         std::string s_request;
-        size_t length;
-        int BodyStart;
         bool index;
-
-
-        bool request_end;
+        size_t content_length;
         
     public:
+        bool is_string_req_send;
         const std::string& get_method();
         const std::string& get_version();
         const std::string& get_path();
@@ -27,17 +24,20 @@ class Request
         void set_version(std::string& name);
         void set_s_request(std::string req);
         std::string get_s_request();
-        size_t get_length();
-        void set_length(size_t len);
-        int get_bodyStart();
-        void set_bodyStart(int pos);
+        size_t get_content_length();
+        void set_content_length(size_t length);
+        
         std::string get_map_values(std::string key);
-        bool fill_headers_map(std::istringstream &obj , std::string &res);
+        bool fill_headers_map(std::istringstream &obj , std::string &res , Client &client);
 
 
-
-        bool get_request_end();
-        void set_request_end(bool index);
+        void print_headers(){
+            std::map<std::string , std::string >::iterator it = headers_map.begin();
+            while(it != headers_map.end()){
+                std::cout << it->first << " ---------------> " << it->second << std::endl;
+                ++it;
+            }
+        }
 
 
         bool get_parse_index();
