@@ -25,12 +25,96 @@
             <p>Abechcha</p>
         </div>
         <div class="card">
-            <img src="https://cdn.intra.42.fr/users/842bd435e0917d8edf312c76a32efd5a/zmoumni.jpg" alt="Image 3">
-            <p>Zmoumni</p>
+            <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)">
+            <p>Upload your own image</p>
         </div>
     </div>
     
     <script>
+        // Preview image function
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Uploaded Image';
+                
+                const caption = document.createElement('p');
+                caption.textContent = 'Uploaded Image';
+                
+                card.appendChild(img);
+                card.appendChild(caption);
+                
+                document.getElementById('cards-container').appendChild(card);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        // CSS for floating bubbles
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .bubble {
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.5);
+                animation: float 20s infinite;
+            }
+            
+            @keyframes float {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-100vh); }
+            }
+        `;
+        document.head.appendChild(style);
+        // CSS for the welcome page 
+        const css = `
+            body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                overflow: hidden;
+            }
+            .background {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: url('https://cdn.intra.42.fr/users/4b3108a2c25c9aaa526f1f9740f79acc/abechcha.jpg');
+                background-size: cover;
+                z-index: -1;
+            }
+            .welcome-container {
+                position: relative;
+                z-index: 1;
+                text-align: center;
+                padding-top: 20vh;
+            }
+            .cards-container {
+                display: none;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding-top: 20px;
+            }
+            .card {
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                margin: 10px;
+                padding: 20px;
+                text-align: center;
+            }
+            .card img {
+                max-width: 100%;
+                border-radius: 10px;
+            }
+        `;
+
         // Create floating bubbles
         function createBubbles() {
             const background = document.getElementById('background');

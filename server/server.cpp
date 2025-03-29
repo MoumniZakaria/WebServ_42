@@ -1,224 +1,405 @@
-# include "../webserver.hpp"
-# include <fcntl.h>
-# include <sys/ioctl.h>
+#include "../webserver.hpp"
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sstream>
 
 Server::Server() {
-    this->fd_server = createServer();
-    struct pollfd server_poll;
-    server_poll.fd = this->fd_server;
-    server_poll.events = POLLIN;
-    server_poll.revents = 0;
-    this->pollfds.push_back(server_poll);
-    this->bindServer();
-    this->listenServer();
+    // Add a default server configuration
+    addServerConfig("localhost", "0.0.0.0", DEFAULT_PORT);
 }
 
 Server::~Server() {
     this->closeServer();
 }
 
-int Server::createServer()
-{
-    this->fd_server = socket(AF_INET, SOCK_STREAM, 0);
-    if (this->fd_server < 0)
-    {
-        throw std::runtime_error("Socket creation failed: " + std::string(strerror(errno)));
+void Server::addServerConfig(const std::string& host, const std::string& ip, int port) {
+    ServerConfig config(host, ip, port);
+    server_configs.push_back(config);
+}
+
+void Server::setServerConfig(size_t index, const std::string& host, const std::string& ip, int port) {
+    if (index >= server_configs.size()) {
+        std::cerr << "Invalid server index in setServerConfig" << std::endl;
+        return;
+    }
+    
+    server_configs[index].host = host;
+    server_configs[index].ip = ip;
+    server_configs[index].port = port;
+}
+
+ServerConfig& Server::getServerConfig(size_t index) {
+    if (index >= server_configs.size()) {
+        throw std::runtime_error("Invalid server index in getServerConfig");
+    }
+    return server_configs[index];
+}
+
+size_t Server::getServerCount() const {
+    return server_configs.size();
+}
+
+void Server::initializeServers() {
+    for (size_t i = 0; i < server_configs.size(); i++) {
+        ServerConfig& config = server_configs[i];
+        
+        // Create, bind, and listen on each server
+        config.fd = createServer(config);
+        
+        if (config.fd >= 0) {
+            struct pollfd server_poll;
+            server_poll.fd = config.fd;
+            server_poll.events = POLLIN;
+            server_poll.revents = 0;
+            
+            pollfds.push_back(server_poll);
+            pollfds_servers.push_back(server_poll);
+            
+            std::cout << "Server initialized on " << config.host << ":" << config.port 
+                      << " (FD: " << config.fd << ")" << std::endl;
+        }
+    }
+}
+
+int Server::createServer(ServerConfig& config) {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        std::cerr << "Socket creation failed for " << config.host << ":" << config.port 
+                  << " - " << strerror(errno) << std::endl;
+        return -1;
     }
 
     // Set socket to non-blocking mode
-    int flags = fcntl(this->fd_server, F_GETFL, 0);
-    fcntl(this->fd_server, F_SETFL, flags | O_NONBLOCK);
+    int flags = fcntl(server_fd, F_GETFL, 0);
+    fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
 
     // Set socket options
     int opt = 1;
-    if (setsockopt(this->fd_server, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
-    {
-        throw std::runtime_error("Setsockopt failed: " + std::string(strerror(errno)));
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+        std::cerr << "Setsockopt failed for " << config.host << ":" << config.port 
+                  << " - " << strerror(errno) << std::endl;
+        close(server_fd);
+        return -1;
     }
 
-    return this->fd_server;
-}
-
-void Server::bindServer()
-{
-    memset(&this->addr_server, 0, sizeof(this->addr_server));
-    this->addr_server.sin_family = AF_INET;
-    this->addr_server.sin_addr.s_addr = INADDR_ANY;
-    this->addr_server.sin_port = htons(PORT);
-
-    if (bind(this->fd_server, (struct sockaddr *)&this->addr_server, sizeof(this->addr_server)) < 0)
-    {
-        throw std::runtime_error("Bind failed: " + std::string(strerror(errno)));
-    }
-}
-
-void Server::listenServer()
-{
-    if (listen(this->fd_server, MAX_CLIENTS) < 0)
-    {
-        throw std::runtime_error("Listen failed: " + std::string(strerror(errno)));
-    }
-}
-
-int Server::acceptClient()
-{
-    struct sockaddr_in addr_client;
-    socklen_t addrlen = sizeof(addr_client);
+    // Set up address structure
+    memset(&config.addr, 0, sizeof(config.addr));
+    config.addr.sin_family = AF_INET;
+    config.addr.sin_port = htons(config.port);
     
-    int new_socket = accept(this->fd_server, (struct sockaddr *)&addr_client, &addrlen);
+    // Convert IP address string to network format
+    if (inet_pton(AF_INET, config.ip.c_str(), &config.addr.sin_addr) <= 0) {
+        std::cerr << "Invalid IP address: " << config.ip << " - " << strerror(errno) << std::endl;
+        close(server_fd);
+        return -1;
+    }
+
+    // Bind the socket
+    if (bind(server_fd, (struct sockaddr*)&config.addr, sizeof(config.addr)) < 0) {
+        std::cerr << "Bind failed for " << config.host << ":" << config.port 
+                  << " - " << strerror(errno) << std::endl;
+        close(server_fd);
+        return -1;
+    }
+
+    // Listen for connections
+    if (listen(server_fd, MAX_CLIENTS) < 0) {
+        std::cerr << "Listen failed for " << config.host << ":" << config.port 
+                  << " - " << strerror(errno) << std::endl;
+        close(server_fd);
+        return -1;
+    }
+
+    return server_fd;
+}
+
+// Remove unused parameters to avoid warnings
+void Server::bindServer(ServerConfig& /* config */) {
+    // Already handled in createServer
+}
+
+void Server::listenServer(ServerConfig& /* config */) {
+    // Already handled in createServer
+}
+
+int Server::acceptClient(int server_fd, struct sockaddr_in& /* server_addr */) {
+    struct sockaddr_in client_addr;
+    socklen_t addrlen = sizeof(client_addr);
     
-    if (new_socket < 0)
-    {
-        if (errno != EWOULDBLOCK && errno != EAGAIN)
-        {
+    int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &addrlen);
+    
+    if (client_fd < 0) {
+        if (errno != EWOULDBLOCK && errno != EAGAIN) {
             std::cerr << "Accept failed: " << strerror(errno) << std::endl;
         }
         return -1;
     }
 
     // Set new socket to non-blocking
-    int flags = fcntl(new_socket, F_GETFL, 0);
-    fcntl(new_socket, F_SETFL, flags | O_NONBLOCK);
+    int flags = fcntl(client_fd, F_GETFL, 0);
+    fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
 
     // Disable Nagle's algorithm for better performance
     int nodelay = 1;
-    setsockopt(new_socket, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+    setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
 
+    // Create client object first
+    clients.push_back(Client(client_fd, client_addr));
+    
+    // Add to polling structures
     struct pollfd new_pollfd;
-    new_pollfd.fd = new_socket;
+    new_pollfd.fd = client_fd;
     new_pollfd.events = POLLIN;
     new_pollfd.revents = 0;
-
-    this->pollfds.push_back(new_pollfd);
-    this->Clients.push_back(Client(new_socket, addr_client));
     
-    std::cout << "\033[38;5;214m" << "****New client connected. Socket FD: " << new_socket << "\033[0m" << std::endl;
-    return 0;
-}
-
-
-void Server::closeClientConnection(size_t index)
-{
-    // Client& client = this->Clients[index - 1];
-    std::cout << "size befor" << this->pollfds.size() << std::endl;
-    std::cout << "size befor" << this->Clients.size() << std::endl;
-    std::cout << this->pollfds[index].fd << std::endl;
-    close(this->pollfds[index].fd);
-    this->pollfds.erase(this->pollfds.begin() + index);
-    this->Clients.erase(this->Clients.begin() + index - 1);
-    std::cout << "size after" << this->pollfds.size() << std::endl;
-    std::cout << "size after" << this->Clients.size() << std::endl;
-}
-
-void Server::closeServer()
-{
-    for ( size_t i = 0; i < this->pollfds.size(); i++)
-    {
-        close(this->pollfds[i].fd);
+    pollfds.push_back(new_pollfd);
+    pollfds_clients.push_back(new_pollfd);
+    
+    // Get the server index that accepted this client
+    int server_index = getServerIndexByFd(server_fd);
+    std::string server_info;
+    
+    if (server_index >= 0) {
+        std::ostringstream ss;
+        ss << server_configs[server_index].host << ":" << server_configs[server_index].port;
+        server_info = ss.str();
+    } else {
+        server_info = "unknown server";
     }
-    this->pollfds.clear();
-    this->Clients.clear();
+    
+    std::cout << "\033[38;5;214m" << "New client connected on " << server_info
+              << " - Client FD: " << client_fd << "\033[0m" << std::endl;
+    
+    return client_fd;
 }
-//************************************************************************************ */
+
+void Server::closeClientConnection(size_t index) {
+    if (index >= pollfds.size()) {
+        std::cerr << "Invalid pollfd index in closeClientConnection" << std::endl;
+        return;
+    }
+    
+    int client_fd = pollfds[index].fd;
+    
+    // Find the client by fd
+    size_t client_index;
+    getClientIndexByFd(client_fd, client_index);
+    
+    // Clean up resources if client found
+    if (client_index < clients.size()) {
+        // Close any open file streams
+        std::ifstream& fileStream = clients[client_index].get_response().get_fileStream();
+        if (fileStream.is_open()) {
+            fileStream.close();
+        }
+        
+        // Find and remove from pollfds_clients
+        for (size_t i = 0; i < pollfds_clients.size(); i++) {
+            if (pollfds_clients[i].fd == client_fd) {
+                pollfds_clients.erase(pollfds_clients.begin() + i);
+                break;
+            }
+        }
+        
+        // Remove from clients vector
+        clients.erase(clients.begin() + client_index);
+    }
+    
+    // Close socket and remove from main pollfds
+    std::cout << "Closing client connection. Socket FD: " << client_fd << std::endl;
+    close(client_fd);
+    pollfds.erase(pollfds.begin() + index);
+}
+
+void Server::closeServer() {
+    // Close all client connections
+    for (size_t i = 0; i < clients.size(); i++) {
+        int client_fd = clients[i].get_client_id();
+        
+        // Close any open file streams
+        std::ifstream& fileStream = clients[i].get_response().get_fileStream();
+        if (fileStream.is_open()) {
+            fileStream.close();
+        }
+        
+        // Close socket
+        std::cout << "Closing client connection: " << client_fd << std::endl;
+        close(client_fd);
+    }
+    
+    // Close all server sockets
+    for (size_t i = 0; i < server_configs.size(); i++) {
+        if (server_configs[i].fd >= 0) {
+            std::cout << "Closing server socket: " << server_configs[i].fd << std::endl;
+            close(server_configs[i].fd);
+            server_configs[i].fd = -1;
+        }
+    }
+    
+    // Clear all containers
+    pollfds.clear();
+    pollfds_clients.clear();
+    pollfds_servers.clear();
+    clients.clear();
+}
 
 void Server::startServer() {
+    // Initialize all server sockets
+    initializeServers();
+    
+    std::cout << "All servers started and listening..." << std::endl;
+    
     while (true) {
-        int poll_count = poll(this->pollfds.data(), this->pollfds.size(), -1);
+        // Wait for activity on any socket
+        int poll_count = poll(pollfds.data(), pollfds.size(), -1);
         if (poll_count < 0) {
             std::cerr << "Poll failed: " << strerror(errno) << std::endl;
             continue;
         }
-
-        for (size_t i = 0; i < this->pollfds.size(); ++i) {
-            if (this->pollfds[i].revents & POLLERR) {
-                std::cerr << "Error on socket: " << this->pollfds[i].fd << std::endl;
-                closeClientConnection(i);
+        
+        // Iterate backwards to safely remove elements if needed
+        for (int i = static_cast<int>(pollfds.size() - 1); i >= 0; i--) {
+            size_t idx = static_cast<size_t>(i);
+            
+            // Skip invalid indices
+            if (idx >= pollfds.size()) continue;
+            
+            // Handle errors
+            if (pollfds[idx].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                // Check if this is a server or client fd
+                bool is_server = false;
+                for (size_t j = 0; j < pollfds_servers.size(); j++) {
+                    if (pollfds[idx].fd == pollfds_servers[j].fd) {
+                        is_server = true;
+                        std::cerr << "Server socket error on fd " << pollfds[idx].fd << std::endl;
+                        // For server sockets, we might want to try to recreate them
+                        break;
+                    }
+                }
+                
+                if (!is_server) {
+                    // Client socket error
+                    std::cerr << "Client socket error on fd " << pollfds[idx].fd << std::endl;
+                    closeClientConnection(idx);
+                }
                 continue;
             }
-
-            if (this->pollfds[i].revents & POLLIN) {
-                if (this->pollfds[i].fd == this->fd_server) {
-                    if (acceptClient() != 0) {
-                        std::cerr << "Failed to accept client connection" << std::endl;
+            
+            // Handle incoming data/connections
+            if (pollfds[idx].revents & POLLIN) {
+                // Check if this is a server socket (accept new connection)
+                bool is_server = false;
+                for (size_t j = 0; j < server_configs.size(); j++) {
+                    if (pollfds[idx].fd == server_configs[j].fd) {
+                        is_server = true;
+                        acceptClient(server_configs[j].fd, server_configs[j].addr);
+                        break;
                     }
-
-                    if (this->pollfds[i].fd != 3) {
-                        std::cout << "client fd 1: " << this->pollfds[i].fd << std::endl;
-                        std::cout << "client fd 2: " << this->Clients[i - 1].get_client_id() << std::endl;
+                }
+                
+                if (!is_server) {
+                    // Client socket - read data
+                    int client_fd = pollfds[idx].fd;
+                    
+                    // Find the client by fd
+                    size_t client_index;
+                    getClientIndexByFd(client_fd, client_index);
+                    
+                    if (client_index >= clients.size()) {
+                        // Client not found - close connection
+                        std::cerr << "No matching client found for fd: " << client_fd << std::endl;
+                        closeClientConnection(idx);
+                        continue;
                     }
                     
-                } else {
-                    handleClientRead(i);
-                    // Prepare to send response by switching to POLLOUT
-                    if (this->Clients[i - 1].get_all_recv() == true) {
-                        std::cout << "heerrre" << std::endl;
-                        this->pollfds[i].events = POLLOUT;
-                        // this->Clients[i - 1].set_all_recv(false);
+                    // Process client request
+                    char buffer[1024] = {0};
+                    ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+                    
+                    if (bytes_read <= 0) {
+                        if (bytes_read == 0) {
+                            std::cout << "Client disconnected. Socket FD: " << client_fd << std::endl;
+                        } else {
+                            std::cerr << "Recv error on fd " << client_fd << ": " << strerror(errno) << std::endl;
+                        }
+                        closeClientConnection(idx);
+                        continue;
+                    }
+                    
+                    // Process the request data
+                    std::string req(buffer, bytes_read);
+                    clients[client_index].get_request().set_s_request(req);
+                    check_request(clients[client_index]);
+                    
+                    // If we've received all data, switch to write mode
+                    if (clients[client_index].get_all_recv()) {
+                        pollfds[idx].events = POLLOUT;
                     }
                 }
             }
-
-            if (this->pollfds[i].revents & POLLOUT) {
-                // this->Clients[i - 1].set_all_recv(true);
-                handleClientWrite(i);
-                this->Clients[i - 1].reset();
-                // check if responce end pollin
-                // if (this->Clients[i - 1].get_response().get_fileStream().eof()) {
-                //     this->pollfds[i].events = POLLIN;
-                //     if (this->Clients[i - 1].get_Alive() == false) {
-                //         closeClientConnection(i);
-                //     } else {
-                //         this->Clients[i - 1].reset();
-                //     }
-                // }
-                // Reset the event to POLLIN after sending response
-                // if (this->Clients[i - 1].get_all_recv() == false) {
-                //     this->pollfds[i].events = POLLIN;
-                // }
+            // Handle outgoing data
+            else if (pollfds[idx].revents & POLLOUT) {
+                int client_fd = pollfds[idx].fd;
+                
+                // Find the client by fd
+                size_t client_index;
+                getClientIndexByFd(client_fd, client_index);
+                
+                if (client_index >= clients.size()) {
+                    // Client not found - close connection
+                    std::cerr << "No matching client found for fd: " << client_fd << std::endl;
+                    closeClientConnection(idx);
+                    continue;
+                }
+                
+                Client& client = clients[client_index];
+                
+                // Send the response
+                handleClientWrite(idx);
+                
+                // Check if file stream has ended
+                if (client.get_response().get_fileStream().eof()) {
+                    // Switch back to POLLIN for next request
+                    pollfds[idx].events = POLLIN;
+                    
+                    // Check if we need to close the connection
+                    if (!client.get_Alive()) {
+                        closeClientConnection(idx);
+                    } else {
+                        // Reset client for the next request
+                        client.reset();
+                    }
+                }
             }
         }
     }
 }
 
-void Server::handleClientRead(size_t index)
-{
-    // std::cout << index << std::endl;
-    char buffer[1024] = {0};
-    int client_fd = this->pollfds[index].fd;
-    Client& client = this->Clients[index - 1];
-            (void)client;
-    
-    // Read data from client
-    ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    std::cout << "bytes read : " << buffer << std::endl;
-    
-    if (bytes_read <= 0)
-    {
-        // Connection closed or error"
-        if (bytes_read == 0 && client.get_Alive() == true)
-        {
-            std::cout << "\033[1;31m" << " client still alive and read all re " << client_fd << "\033[0m" << std::endl;
-        }
-        else 
-        {
-            std::cerr << "Recv error: " << strerror(errno) << std::endl;
-            if (client.get_Alive() == false)
-                closeClientConnection(index);
-            return;
-        }
-        return;
-    }
-    std::string req(buffer, bytes_read);
-    std::cout << "\033[1;32m" << req << "\033[0m" << std::endl;
-    this->Clients[index - 1].get_request().set_s_request(req);
-    check_request(this->Clients[index - 1]);
-
+// Function is now empty but kept for API compatibility
+void Server::handleClientRead(size_t /* index */) {
+    // This functionality is now integrated in startServer method
 }
 
 void Server::handleClientWrite(size_t index) {
-    Client& client = this->Clients[index - 1];
-    int client_fd = this->pollfds[index].fd;
-
+    if (index >= pollfds.size()) {
+        std::cerr << "Invalid pollfd index in handleClientWrite" << std::endl;
+        return;
+    }
+    
+    int client_fd = pollfds[index].fd;
+    
+    // Find the client by fd
+    size_t client_index;
+    getClientIndexByFd(client_fd, client_index);
+    
+    if (client_index >= clients.size()) {
+        std::cerr << "No matching client found for fd: " << client_fd << std::endl;
+        closeClientConnection(index);
+        return;
+    }
+    
+    Client& client = clients[client_index];
+    
     // Send the string response if not yet sent
     if (!client.get_request().is_string_req_send) {
         const std::string& response = client.get_response().get_response();
@@ -227,60 +408,50 @@ void Server::handleClientWrite(size_t index) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
                 return; // Retry in next POLLOUT
             }
-            std::cerr << "Send error: " << strerror(errno) << std::endl;
+            std::cerr << "Send error on fd " << client_fd << ": " << strerror(errno) << std::endl;
             closeClientConnection(index);
             return;
         }
         client.get_request().is_string_req_send = true;
     }
-
+    
     // Send file content if available
     std::ifstream& fileStream = client.get_response().get_fileStream();
     if (fileStream.is_open() && !fileStream.eof()) {
         char buffer[8192];
         fileStream.read(buffer, sizeof(buffer));
         int bytes_read = fileStream.gcount();
-
+        
         if (bytes_read > 0) {
             ssize_t bytes_sent = send(client_fd, buffer, bytes_read, 0);
             if (bytes_sent < 0) {
                 if (errno == EWOULDBLOCK || errno == EAGAIN) {
                     return; // Retry later
                 }
-                std::cerr << "Send error: " << strerror(errno) << std::endl;
+                std::cerr << "Send error on fd " << client_fd << ": " << strerror(errno) << std::endl;
                 closeClientConnection(index);
                 return;
             }
         }
-
-
-
-    //     if (fileStream.eof()) {
-    //         if (client.get_Alive())
-    //         {
-    //             // Keep connection alive; reset after file response
-    //             client.reset();
-    //             client.set_all_recv(false);
-    //             this->pollfds[index].events = POLLIN;
-    //         } else {
-    //             // Close connection after file response
-    //             closeClientConnection(index);
-    //             fileStream.close();
-    //         }
-    //     }
-    // } else {
-    //     // No file to send; reset after string response
-    //     client.reset();
-    //     client.set_all_recv(false);
-    //     this->pollfds[index].events = POLLIN;
     }
-        if (client.get_response().get_fileStream().eof()) {
-            this->pollfds[index].events = POLLIN;
-            std::cout << " keep alive is set to : " << client.get_Alive() << std::endl;
-        if (!client.get_Alive()) {
-            closeClientConnection(index);
-        } else {
-            client.reset();
+}
+
+void Server::getClientIndexByFd(int fd, size_t& client_index) {
+    client_index = clients.size(); // Default to invalid index
+    
+    for (size_t i = 0; i < clients.size(); i++) {
+        if (clients[i].get_client_id() == fd) {
+            client_index = i;
+            break;
         }
     }
+}
+
+int Server::getServerIndexByFd(int fd) {
+    for (size_t i = 0; i < server_configs.size(); i++) {
+        if (server_configs[i].fd == fd) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1; // Not found
 }

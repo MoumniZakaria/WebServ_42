@@ -13,41 +13,41 @@ void trim_non_printable(std::string &str)
     str = str.substr(start, end - start);
 }
 
-bool setupSocket(int &server_fd, struct sockaddr_in &server_addr)
-{
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd == -1)
-    {
-        std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
-        return false;
-    }
+// bool setupSocket(int &server_fd, struct sockaddr_in &server_addr)
+// {
+//     server_fd = socket(AF_INET, SOCK_STREAM, 0);
+//     if (server_fd == -1)
+//     {
+//         std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
+//         return false;
+//     }
 
-    // Set socket options
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-    {
-        std::cerr << "Setsockopt failed: " << strerror(errno) << std::endl;
-        return false;
-    }
+//     // Set socket options
+//     int opt = 1;
+//     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+//     {
+//         std::cerr << "Setsockopt failed: " << strerror(errno) << std::endl;
+//         return false;
+//     }
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
+//     server_addr.sin_family = AF_INET;
+//     server_addr.sin_addr.s_addr = INADDR_ANY;
+//     server_addr.sin_port = htons(PORT);
 
-    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
-    {
-        std::cerr << "Bind failed: " << strerror(errno) << std::endl;
-        return false;
-    }
+//     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
+//     {
+//         std::cerr << "Bind failed: " << strerror(errno) << std::endl;
+//         return false;
+//     }
 
-    if (listen(server_fd, 10) == -1)
-    {
-        std::cerr << "Listen failed: " << strerror(errno) << std::endl;
-        return false;
-    }
+//     if (listen(server_fd, 10) == -1)
+//     {
+//         std::cerr << "Listen failed: " << strerror(errno) << std::endl;
+//         return false;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 int hex_to_int(const std::string &hexStr)
 {
@@ -438,8 +438,20 @@ int main(int ac, char **av)
     (void)av;
     try
     {
-        Server S1;
-        S1.startServer();
+        // Server S1;
+        // S1.startServer();
+
+
+
+        // Create a server with default configuration
+    Server myServer;
+
+    // Add additional servers
+    myServer.addServerConfig("server2", "0.0.0.0", 8081);
+    myServer.addServerConfig("server3", "0.0.0.0", 8082);
+
+    // Start all servers
+    myServer.startServer();
     }
     catch(const std::exception& e)
     {

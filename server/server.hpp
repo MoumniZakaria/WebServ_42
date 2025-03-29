@@ -2,40 +2,74 @@
 #include "../webserver.hpp"
 #include <poll.h>
 #include <fcntl.h>
+#include <string>
+#include <vector>
+#include <sstream>
 
-#define PORT 8080
+#define DEFAULT_PORT 8080
 #define MAX_CLIENTS 128
+
+// Structure to hold server configuration
+struct ServerConfig {
+    std::string host;
+    std::string ip;
+    int port;
+    int fd;
+    struct sockaddr_in addr;
+    
+    ServerConfig() : host("localhost"), ip("0.0.0.0"), port(DEFAULT_PORT), fd(-1) {}
+    ServerConfig(const std::string& h, const std::string& i, int p) : 
+        host(h), ip(i), port(p), fd(-1) {}
+};
 
 class Server
 {
 private:
-    int fd_server;
-    struct sockaddr_in addr_server;
-    std::vector<Client> Clients;
-    std::vector<pollfd> pollfds;
+    // Server properties
+    std::vector<ServerConfig> server_configs;
+    
+    // Client management
+    std::vector<Client> clients;
+    
+    // Polling structures
+    std::vector<pollfd> pollfds;           // All file descriptors (servers + clients)
+    std::vector<pollfd> pollfds_clients;   // Only client file descriptors
+    std::vector<pollfd> pollfds_servers;   // Only server file descriptors
+
+    // Helper function for string conversion (C++98 compatible)
+    std::string intToString(int num) {
+        std::ostringstream ss;
+        ss << num;
+        return ss.str();
+    }
 
 public:
     Server();
     ~Server();
 
-    // Getters and setters
-    void set_fd_server(int fd);
-    int get_fd_server();
-    void set_addr_server(struct sockaddr_in addr);
-    struct sockaddr_in get_addr_server();
-
-    // Main server functions
-    void startServer();
-    int createServer();
-    void bindServer();
-    void listenServer();
-    int acceptClient();
+    // Configuration setters and getters
+    void addServerConfig(const std::string& host, const std::string& ip, int port);
+    void setServerConfig(size_t index, const std::string& host, const std::string& ip, int port);
+    ServerConfig& getServerConfig(size_t index);
+    size_t getServerCount() const;
+    
+    // Server management
+    void initializeServers();
+    int createServer(ServerConfig& config);
+    void bindServer(ServerConfig& config);
+    void listenServer(ServerConfig& config);
+    int acceptClient(int server_fd, struct sockaddr_in& server_addr);
     void closeServer();
-
-    // Client handling functions
+    
+    // Main server loop
+    void startServer();
+    
+    // Client handling
     void handleClientRead(size_t index);
     void handleClientWrite(size_t index);
     void closeClientConnection(size_t index);
-};
 
-// 8192
+    // Helper methods
+    void getClientIndexByFd(int fd, size_t& client_index);
+    int getServerIndexByFd(int fd);
+};

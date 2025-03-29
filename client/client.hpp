@@ -31,6 +31,20 @@ class Client{
         void fill_map(std::string key , std::string value);
         void print_map();
         Client();
+        Client & operator=(const Client &other) {
+            if (this != &other) {
+                client_id = other.client_id;
+                Client_Addr = other.Client_Addr;
+                delete request_object;
+                delete response_object;
+                request_object = other.request_object;
+                response_object = other.response_object;
+                form_data = other.form_data;
+                keep_alive = other.keep_alive;
+                all_recv = other.all_recv;
+            }
+            return *this;
+        };
         ~Client(){};
         void reset();
 };
