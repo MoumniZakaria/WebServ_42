@@ -42,7 +42,17 @@ class Request
 
         bool get_parse_index();
         void set_parse_index(bool index);
-
+        void reset()
+        {
+            method.clear();
+            version.clear();
+            path.clear();
+            headers_map.clear();
+            s_request.clear();
+            index = false;
+            content_length = 0;
+            is_string_req_send = false;
+        }
         Request();
         ~Request();
 };

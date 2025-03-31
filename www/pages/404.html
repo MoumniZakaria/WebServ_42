@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP 404 Animation</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a1a;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .http-container {
+            position: relative;
+            width: 300px;
+            height: 200px;
+        }
+
+        .status-box {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #dc3545;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            animation: error-pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.3);
+        }
+
+        .status-code {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeInUp 0.5s 0.3s forwards;
+        }
+
+        .status-message {
+            font-size: 1.2rem;
+            opacity: 0;
+            animation: fadeInUp 0.5s 0.5s forwards;
+        }
+
+        .xmark {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            top: -25px;
+            right: -25px;
+            opacity: 0;
+            animation: xmarkPop 0.5s 1s forwards;
+        }
+
+        .xmark__circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #dc3545;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .xmark__x {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+        @keyframes error-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes xmarkPop {
+            0% { opacity: 0; transform: scale(0) rotate(45deg); }
+            80% { opacity: 1; transform: scale(1.1) rotate(45deg); }
+            100% { opacity: 1; transform: scale(1) rotate(45deg); }
+        }
+
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .data-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .data-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            height: 2px;
+            animation: dataError 1s linear infinite;
+        }
+
+        @keyframes dataError {
+            0% { left: -100%; width: 20%; }
+            50% { width: 40%; background: rgba(255, 0, 0, 0.3); }
+            100% { left: 100%; width: 20%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="http-container">
+        <!-- Animated error data lines -->
+        <div class="data-lines">
+            <div class="data-line" style="top: 20%; animation-delay: 0.1s"></div>
+            <div class="data-line" style="top: 40%; animation-delay: 0.3s"></div>
+            <div class="data-line" style="top: 60%; animation-delay: 0.5s"></div>
+        </div>
+
+        <!-- Status box -->
+        <div class="status-box">
+            <div class="status-code">404</div>
+            <div class="status-message">Not Found - Resource Missing</div>
+        </div>
+
+        <!-- X Mark -->
+        <svg class="xmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="xmark__circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="xmark__x" fill="none" d="M15 15 l22 22 M37 15 l-22 22"/>
+        </svg>
+    </div>
+</body>
+</html>

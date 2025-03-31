@@ -36,7 +36,7 @@ private:
     std::vector<pollfd> pollfds_clients;   // Only client file descriptors
     std::vector<pollfd> pollfds_servers;   // Only server file descriptors
 
-    // Helper function for string conversion (C++98 compatible)
+    // Helper function for string conversion 
     std::string intToString(int num) {
         std::ostringstream ss;
         ss << num;

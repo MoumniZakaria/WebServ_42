@@ -15,10 +15,10 @@ CFLAGS =  -Wall -Wextra -Werror -std=c++98 -g -fsanitize=address
 all : $(NAME)
 
 %.o : %.cpp ${HEDER} Makefile
-	c++ ${CFLAGS} -c $< -o $@
+	g++ ${CFLAGS} -c $< -o $@
 
 $(NAME) : $(OBJ) ${HEDER}
-	 c++ ${CFLAGS} $(OBJ) -o $@
+	 g++ ${CFLAGS} $(OBJ) -o $@
 
 clean :
 	rm -rf $(OBJ)

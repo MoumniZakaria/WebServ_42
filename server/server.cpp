@@ -175,7 +175,7 @@ int Server::acceptClient(int server_fd, struct sockaddr_in& /* server_addr */) {
 
 void Server::closeClientConnection(size_t index) {
     if (index >= pollfds.size()) {
-        std::cerr << "Invalid pollfd index in closeClientConnection" << std::endl;
+        std::cerr << "\033[31mInvalid pollfd index in closeClientConnection\033[0m" << std::endl;
         return;
     }
     
@@ -293,6 +293,7 @@ void Server::startServer() {
                     if (pollfds[idx].fd == server_configs[j].fd) {
                         is_server = true;
                         acceptClient(server_configs[j].fd, server_configs[j].addr);
+
                         break;
                     }
                 }
@@ -313,9 +314,10 @@ void Server::startServer() {
                     }
                     
                     // Process client request
-                    char buffer[1024] = {0};
+                    char buffer[8192] = {0};
                     ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-                    
+                    std::cout << "Received data from client: " << buffer << std::endl;
+                    // exit(1);
                     if (bytes_read <= 0) {
                         if (bytes_read == 0) {
                             std::cout << "Client disconnected. Socket FD: " << client_fd << std::endl;
@@ -330,6 +332,8 @@ void Server::startServer() {
                     std::string req(buffer, bytes_read);
                     clients[client_index].get_request().set_s_request(req);
                     check_request(clients[client_index]);
+                    
+                    // clients[client_index].set_Alive();
                     
                     // If we've received all data, switch to write mode
                     if (clients[client_index].get_all_recv()) {
@@ -356,6 +360,7 @@ void Server::startServer() {
                 
                 // Send the response
                 handleClientWrite(idx);
+                // std::cout << idx << " Sending response to client: " << client_fd << std::endl;
                 
                 // Check if file stream has ended
                 if (client.get_response().get_fileStream().eof()) {
@@ -375,10 +380,10 @@ void Server::startServer() {
     }
 }
 
-// Function is now empty but kept for API compatibility
-void Server::handleClientRead(size_t /* index */) {
-    // This functionality is now integrated in startServer method
-}
+
+// void Server::handleClientRead(size_t /* index */) {
+//     // This functionality is now integrated in startServer method
+// }
 
 void Server::handleClientWrite(size_t index) {
     if (index >= pollfds.size()) {
