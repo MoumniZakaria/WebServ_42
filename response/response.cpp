@@ -65,12 +65,11 @@ void response_to_get(Client &client)
 
     if (stat(client.get_request().get_path().c_str(), &path_stat) == -1)
     {
-        // std::cerr << "Error: stat field" << std::endl;
+        std::string error_page_path = "www/errors/404.html";
+        res = fill_response(client.get_response().get_fileStream(), error_page_path, client);
         client.get_response().set_response_status(404);
-        res = "HTTP/1.1 404 not found\r\nContent-Type: text/html\r\n\r\n\
-        <html><head><title>404 not found</title></head><body><center><h1>404 not found</h1></center>\
-        <hr><center>42 webserv 0.1</center></body></html>";
         client.get_response().set_response(res);
+
         return;
     }
 
@@ -78,10 +77,9 @@ void response_to_get(Client &client)
     {
         if (access(pat.c_str(), R_OK | W_OK | X_OK) == -1)
         {
+            std::string error_page_path = "www/errors/404.html";
+            res = fill_response(client.get_response().get_fileStream(), error_page_path, client);
             client.get_response().set_response_status(403);
-            res = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n\
-                <html><head><title>403 Forbidden</title></head><body><center><h1>403 Forbidden</h1></center>\
-                <hr><center>42 webserv 0.1</center></body></html>";
             client.get_response().set_response(res);
             return;
         }
@@ -89,11 +87,9 @@ void response_to_get(Client &client)
 
         if (dir == NULL)
         {
-            // std::cerr << "Error opening directory: " << strerror(errno) << std::endl;
+            std::string error_page_path = "www/errors/404.html";
+            res = fill_response(client.get_response().get_fileStream(), error_page_path, client);
             client.get_response().set_response_status(404);
-            res = "HTTP/1.1 404 not found\r\nContent-Type: text/html\r\n\r\n\
-                <html><head><title>404 not found</title></head><body><center><h1>404 not found</h1></center>\
-                <hr><center>42 webserv 0.1</center></body></html>";
             client.get_response().set_response(res);
             return;
         }
@@ -105,22 +101,35 @@ void response_to_get(Client &client)
         res += "Connection: close\r\n";
         res += "\r\n";
 
-        res += "<html>\n<head>\n<title>Found Files</title>\n</head>\n<body>\n";
+        res += "<html>\n<head>\n<title>Found Files</title>\n";
+        res += "<style>\n";
+        res += "  body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; }\n";
+        res += "  h1 { color: #4CAF50; }\n";
+        res += "  ul { list-style-type: none; padding: 0; }\n";
+        res += "  li { background-color: #fff; border: 1px solid #ddd; margin: 5px 0; padding: 10px; border-radius: 5px; }\n";
+        res += "  a { text-decoration: none; color: #007BFF; font-size: 18px; }\n";
+        res += "  a:hover { color: #0056b3; }\n";
+        res += "  .container { max-width: 800px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }\n";
+        res += "</style>\n";
+        res += "</head>\n<body>\n";
+        res += "<div class='container'>\n";
         res += "<h1>Found Files in Directory</h1>\n<ul>\n";
+
         while ((entry = readdir(dir)) != NULL)
         {
             std::string fileName = entry->d_name;
             res += "<li><a href=\"/" + pat.substr(4) + "/" + fileName + "\">" + fileName + "</a></li>\n";
-            // 4 must be change by root dir size
+            // 4 must be changed to adjust for the root directory size
         }
-        res += "</ul>\n</body>\n</html>\n";
+
+        res += "</ul>\n</div>\n</body>\n</html>\n";
         client.get_response().set_response(res);
         closedir(dir);
     }
 
     else if (S_ISREG(path_stat.st_mode))
     {
-        res = fill_response(client.get_response().get_fileStream(), pat , client);
+        res = fill_response(client.get_response().get_fileStream(), pat, client);
         client.get_response().set_response(res);
     }
     else

@@ -1,154 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome Page</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="background" id="background"></div>
-    
-    <div class="welcome-container">
-        <h1>Welcome to one of the best web servers in the world!</h1>
-        <p>We're glad you're here. Explore and enjoy your stay!</p>
-        <button onclick="showCards()">Get Started</button>
-    </div>
-    
-    <div class="cards-container" id="cards-container">
-        <div class="card">
-            <img src="https://cdn.intra.42.fr/users/bcefd7533eeb366934477185f89a8375/kid-ouis.jpg" alt="Image 1">
-            <p>Kid-ouis</p>
-        </div>
-        <div class="card">
-            <img src="https://cdn.intra.42.fr/users/4b3108a2c25c9aaa526f1f9740f79acc/abechcha.jpg" alt="Image 2">
-            <p>Abechcha</p>
-        </div>
-        <div class="card">
-            <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)">
-            <p>Upload your own image</p>
-        </div>
-    </div>
-    
-    <script>
-        // Preview image function
-        function previewImage(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.alt = 'Uploaded Image';
-                
-                const caption = document.createElement('p');
-                caption.textContent = 'Uploaded Image';
-                
-                card.appendChild(img);
-                card.appendChild(caption);
-                
-                document.getElementById('cards-container').appendChild(card);
-            };
-            
-            reader.readAsDataURL(file);
-        }
-        // CSS for floating bubbles
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .bubble {
-                position: absolute;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.5);
-                animation: float 20s infinite;
-            }
-            
-            @keyframes float {
-                0% { transform: translateY(0); }
-                100% { transform: translateY(-100vh); }
-            }
-        `;
-        document.head.appendChild(style);
-        // CSS for the welcome page 
-        const css = `
-            body {
-                margin: 0;
-                font-family: Arial, sans-serif;
-                background-color: #f0f0f0;
-                overflow: hidden;
-            }
-            .background {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-image: url('https://cdn.intra.42.fr/users/4b3108a2c25c9aaa526f1f9740f79acc/abechcha.jpg');
-                background-size: cover;
-                z-index: -1;
-            }
-            .welcome-container {
-                position: relative;
-                z-index: 1;
-                text-align: center;
-                padding-top: 20vh;
-            }
-            .cards-container {
-                display: none;
-                flex-wrap: wrap;
-                justify-content: center;
-                padding-top: 20px;
-            }
-            .card {
-                background-color: white;
-                border-radius: 10px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                margin: 10px;
-                padding: 20px;
-                text-align: center;
-            }
-            .card img {
-                max-width: 100%;
-                border-radius: 10px;
-            }
-        `;
 
-        // Create floating bubbles
+<body>
+    <div class="all" id="all">
+        <div class="background" id="background"></div>
+
+        <div class="welcome-container">
+            <h1>Welcome to one of the best web servers in the world!</h1>
+            <p>We're glad you're here. Explore and enjoy your stay!</p>
+            <button onclick="showCards()">Get Started</button>
+        </div>
+
+        <div class="cards-container" id="cards-container">
+            <div class="card">
+                <img src="https://cdn.intra.42.fr/users/bcefd7533eeb366934477185f89a8375/kid-ouis.jpg" alt="Image 1">
+                <p>Kid-ouis</p>
+            </div>
+            <div class="card">
+                <img src="https://cdn.intra.42.fr/users/4b3108a2c25c9aaa526f1f9740f79acc/abechcha.jpg" alt="Image 2">
+                <p>Abechcha</p>
+            </div>
+            <div class="card">
+                <img src="https://cdn.intra.42.fr/users/842bd435e0917d8edf312c76a32efd5a/zmoumni.jpg" alt="Image 3">
+                <p>Zmoumni</p>
+            </div>
+            <div class="test keep-it-down">
+                <button class="post" onclick="showModal()">Perform Post</button>
+                <button class="delete">Perform Delete</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal">
+        <button class="close-button" id="close-button" onclick="close_post()">X</button>
+        <h2>Post Your File</h2>
+        <form action="#" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Choose File:</label>
+                <input type="file" id="file" name="file" required>
+            </div>
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+    <script>
         function createBubbles() {
             const background = document.getElementById('background');
             const bubbleCount = 15;
-            
+
             for (let i = 0; i < bubbleCount; i++) {
                 const bubble = document.createElement('div');
                 bubble.className = 'bubble';
-                
-                // Random properties
+
                 const size = Math.random() * 100 + 50;
                 const positionX = Math.random() * 100;
                 const delay = Math.random() * 15;
                 const duration = Math.random() * 15 + 20;
-                
+
                 bubble.style.width = `${size}px`;
                 bubble.style.height = `${size}px`;
                 bubble.style.left = `${positionX}%`;
                 bubble.style.animationDelay = `${delay}s`;
                 bubble.style.animationDuration = `${duration}s`;
-                
+
                 background.appendChild(bubble);
             }
         }
-        
-        // Show cards function
+
         function showCards() {
             document.getElementById('cards-container').style.display = 'flex';
         }
-        
-        // Initialize animations when page loads
-        window.onload = function() {
+
+        window.onload = function () {
             createBubbles();
+        };
+
+        function close_post() {
+            var element = document.getElementById("modal");
+            element.style.display = "none"; 
+            var body = document.getElementById("all");
+            body.style.filter = "none"; 
+        };
+
+        function showModal() {
+            var body = document.getElementById("all");
+            var element = document.getElementById("modal");
+
+            if (body.style.filter === "blur(5px)") {
+                body.style.filter = "none";
+                element.style.display = "none";
+            } else {
+                body.style.filter = "blur(5px)";
+                // element.style.display = "block";
+            }
         };
     </script>
 </body>
+
 </html>

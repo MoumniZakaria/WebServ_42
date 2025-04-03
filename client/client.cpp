@@ -9,7 +9,7 @@ Client::Client(int fd, struct sockaddr_in Add)
     response_object = new Response();
     client_id = fd;
     Client_Addr = Add;
-    keep_alive = false;
+    keep_alive = true;
     all_recv = false;
     // std::cout << "Client created with fd: " << client_id << std::endl;
     // std::cout << "Client created with req: " << request_object << std::endl;
@@ -76,15 +76,10 @@ void Client::reset() {
     // client_id = -1;
     //free address
     // Client_Addr = {};
-    request_object->reset();
-    response_object->reset();
-    form_data.clear();
-    // Reset the file stream
-    if (response_object->get_fileStream().is_open()) {
-        response_object->get_fileStream().close();
-    }
-    // Reset the request object
-    request_object->set_s_request("");
+    delete request_object;
+    delete response_object;
+    request_object = new Request();
+    response_object = new Response();
     keep_alive = true;
     all_recv = false;
 }

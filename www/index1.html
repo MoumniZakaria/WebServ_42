@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blur Effect Example</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+      filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* Exclude the specific div from the blur */
+    #no-blur {
+      filter: none;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+      position: relative;
+    }
+
+    /* Style for blurred content to make it more visible */
+    #content, #more-content {
+      color: rgba(0,0,0,0.4);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="content">
+    <p>This content will be blurred</p>
+    <p>This content will be blurred</p>
+  </div>
+  
+  <div id="no-blur">
+    <p>This content will NOT be blurred</p>
+    <p>It stands out clearly against the blurred background</p>
+  </div>
+  
+  <div id="more-content">
+    <p>This content will be blurred</p>
+  </div>
+</body>
+</html>

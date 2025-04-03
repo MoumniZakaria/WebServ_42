@@ -25,6 +25,7 @@
 
 
 extern std::string root;
+extern std::string not_found;
 
 bool check_request_line(std::string & line);
 std::string removeslashes(const std::string& line);
@@ -42,7 +43,7 @@ void response_to_get(Client &client);
 
 
 
-
+void  trim(std::string& str);
 std::string generate_file_names(const std::string& extension) ;
 void boundary(Client &clinet);
 void chunked(Client &client);

@@ -2,9 +2,11 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sstream>
+#include <signal.h>
 
 Server::Server() {
     // Add a default server configuration
+    signal(SIGPIPE, SIG_IGN);
     addServerConfig("localhost", "0.0.0.0", DEFAULT_PORT);
 }
 
@@ -314,9 +316,9 @@ void Server::startServer() {
                     }
                     
                     // Process client request
-                    char buffer[8192] = {0};
+                    char buffer[16384] = {0};
                     ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-                    std::cout << "Received data from client: " << buffer << std::endl;
+                    // std::cout << "Received data from client: " << buffer << std::endl;
                     // exit(1);
                     if (bytes_read <= 0) {
                         if (bytes_read == 0) {
@@ -324,6 +326,7 @@ void Server::startServer() {
                         } else {
                             std::cerr << "Recv error on fd " << client_fd << ": " << strerror(errno) << std::endl;
                         }
+                        std::cout << bytes_read << " hereeeeeeeeeeeeeeeeeeeee" << std::endl;
                         closeClientConnection(idx);
                         continue;
                     }
@@ -373,6 +376,7 @@ void Server::startServer() {
                     } else {
                         // Reset client for the next request
                         client.reset();
+                        // closeClientConnection(idx);
                     }
                 }
             }
@@ -409,6 +413,7 @@ void Server::handleClientWrite(size_t index) {
     if (!client.get_request().is_string_req_send) {
         const std::string& response = client.get_response().get_response();
         ssize_t bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+        std::cout << " >>" << response << std::endl;
         if (bytes_sent < 0) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
                 return; // Retry in next POLLOUT
@@ -428,17 +433,42 @@ void Server::handleClientWrite(size_t index) {
         int bytes_read = fileStream.gcount();
         
         if (bytes_read > 0) {
-            ssize_t bytes_sent = send(client_fd, buffer, bytes_read, 0);
-            if (bytes_sent < 0) {
-                if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                    return; // Retry later
-                }
-                std::cerr << "Send error on fd " << client_fd << ": " << strerror(errno) << std::endl;
+            // Check if socket is still writable
+            struct pollfd pfd;
+            pfd.fd = client_fd;
+            pfd.events = POLLOUT;
+            pfd.revents = 0;
+            
+            if (poll(&pfd, 1, 0) <= 0 || (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))) {
+                std::cerr << "Socket error detected before send" << std::endl;
                 closeClientConnection(index);
                 return;
             }
+            
+            // Socket is writable, proceed with send
+            ssize_t bytes_sent = send(client_fd, buffer, bytes_read, MSG_NOSIGNAL);
+            if (bytes_sent < 0) {
+                if (errno == EPIPE || errno == ECONNRESET) {
+                    std::cerr << "Client closed connection" << std::endl;
+                    closeClientConnection(index);
+                    return;
+                } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    // Would block, try again later
+                    // Rewind the file position since we didn't send
+                    fileStream.seekg(-bytes_read, std::ios::cur);
+                    return;
+                } else {
+                    std::cerr << "Send error: " << strerror(errno) << std::endl;
+                    closeClientConnection(index);
+                    return;
+                }
+            } else if (bytes_sent < bytes_read) {
+                // Partial send - rewind file position for the unsent portion
+                fileStream.seekg(-(bytes_read - bytes_sent), std::ios::cur);
+                return; // Try again later
+            }
         }
-    }
+}
 }
 
 void Server::getClientIndexByFd(int fd, size_t& client_index) {

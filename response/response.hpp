@@ -23,15 +23,7 @@ class Response
         int  get_response_status();
         void set_response_status(int  index);
 
-        void reset()
-        {
-            fileStream->close();
-            delete fileStream;
-            fileStream = NULL;
-            response.clear();
-            Ready_to_send = false;
-            response_status = 0;
-        }
+
         Response();
         ~Response();
 };

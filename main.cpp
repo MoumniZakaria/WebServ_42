@@ -86,8 +86,8 @@ void chunked(Client &client)
 {
     static int size;
     static int writed;
-    static std::ofstream file;
     static int d;
+
     if (!d)
     {
         std::string extension = client.get_request().get_map_values("Content-Type");
@@ -105,9 +105,8 @@ void chunked(Client &client)
         }
         extension = extension.substr(pos + 1);
         extension = root + "/" + generate_file_names(extension);
-        // std::cout << extension << std::endl;
-        // exit(0);
-        file.open(extension.c_str());
+
+        client.get_request().file.open(extension.c_str());
         d = 9;
     }
     std::string request = client.get_request().get_s_request();
@@ -134,6 +133,7 @@ void chunked(Client &client)
                 i += 2;
 
                 if (size == 0){
+                    size = writed = d = 0;
                     client.set_all_recv(true);
                     break;
                 }
@@ -148,7 +148,7 @@ void chunked(Client &client)
         }
         else if (state == read_from_chunk)
         {
-            file << request[i] << std::flush;
+            client.get_request().file << request[i] << std::flush;
             i++;
             writed++;
 
@@ -157,17 +157,8 @@ void chunked(Client &client)
         }
         else if (state == chunk_end)
         {
-            if (request[i] == '\r' && i + 1 < request.length() && request[i + 1] == '\n')
-            {
-                i += 2;
-                state = get_chunk_size;
-            }
-            else
-            {
-                std::cerr << "the chunk data must be end by \r\n"
-                          << std::endl;
-                exit(0);
-            }
+            i += 2;
+            state = get_chunk_size;
         }
     }
 }
@@ -288,12 +279,12 @@ void boundary(Client &client)
         if (index == -1)
         {
             client.print_map();
-            return;
+            break;
         }
         else if (index == 0)
         {
             buffer = buffer.substr(boundary.size() + 4);
-            // std::cout << buffer << std::endl;
+
         }
         else
         {
@@ -302,6 +293,8 @@ void boundary(Client &client)
             fill_data_boudary(tmp, client);
         }
     }
+    buffer =  boundary = "";
+    i = 0;
 }
 
 
@@ -326,6 +319,7 @@ void handle_boundary_chanked(Client &client)
         if (size == 0){
             client.set_all_recv(true);
             client.get_request().set_s_request(result);
+            request  = result = "";
             boundary(client);
             return ;
         }
@@ -438,20 +432,9 @@ int main(int ac, char **av)
     (void)av;
     try
     {
-        // Server S1;
-        // S1.startServer();
-
-
-
-        // Create a server with default configuration
-    Server myServer;
-
-    // Add additional servers
-    myServer.addServerConfig("server2", "0.0.0.0", 8081);
-    myServer.addServerConfig("server3", "0.0.0.0", 8082);
-
-    // Start all servers
-    myServer.startServer();
+        Server S1;
+        // S1.addServerConfig("server2", "0.0.0.0", 8081);
+        S1.startServer();
     }
     catch(const std::exception& e)
     {

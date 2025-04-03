@@ -1,5 +1,22 @@
 #include "../webserver.hpp"
 std::string root = "www";
+std::string not_found = "www/errors/404.html";
+
+void  trim(std::string& str) {
+    size_t start = 0;
+    size_t end = str.size();
+
+    while (start < end && std::isspace(str[start])) {
+        ++start;
+    }
+
+    while (end > start && std::isspace(str[end - 1])) {
+        --end;
+    }
+
+    str = str.substr(start, end - start);
+}
+
 
 void get_error_res(std::string &res, int status , Client &client)
 {
@@ -77,9 +94,11 @@ std::string fill_response(std::ifstream& fileStream,  std::string& filePath , Cl
     fileStream.open(filePath.c_str(), std::ios::binary | std::ios::ate);
     
     if (!fileStream) {
-        client.get_response().set_response_status(404);
-        std::cerr << "Failed to open file: " << filePath << std::endl;
-        return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+        client.get_response().set_response_status(500);
+        std::cout  << "Failed to open file: " << filePath << std::endl;
+        return  "HTTP/1.1 500 internal error\r\nContent-Type: text/html\r\n\r\n\
+        <html><head><title>500 internal server Error</title></head><body><center><h1>500 internal server Error</h1></center>\
+        <hr><center>42 webserv 0.1</center></body></html>";
     }
 
     std::streampos fileSize = fileStream.tellg();
@@ -91,9 +110,9 @@ std::string fill_response(std::ifstream& fileStream,  std::string& filePath , Cl
     response << "Content-Length: " << fileSize << "\r\n";
     response << "Accept-Ranges: bytes\r\n";
     response << "Connection: close\r\n";
-    response << "X-Content-Type-Options: nosniff\r\n";
-    response << "Access-Control-Allow-Origin: *\r\n";
     response << "\r\n";
     
     return response.str();
 }
+
+

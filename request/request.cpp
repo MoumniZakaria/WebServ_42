@@ -110,6 +110,7 @@ std::string removeslashes(const std::string &line)
 
 bool Request::fill_headers_map(std::istringstream &ob, std::string &res, Client &client)
 {
+    client.set_Alive(false);
     std::string line, key, value;
     while (std::getline(ob, line))
     {
@@ -137,6 +138,10 @@ bool Request::fill_headers_map(std::istringstream &ob, std::string &res, Client 
             headers_map.clear();
             return false;
         }
+        trim_non_printable(value);
+        trim(value);
+        if (key == "Connection" && value == "keep-alive")
+            client.set_Alive(true);
         headers_map[key] = value;
     }
     return true;
@@ -193,6 +198,13 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
         }
     }
     pa += oss.str();
+    int i = 0;
+    while(str[i]){
+        free(str[i]);
+        i++;
+    }
+    free(str);
+    str = NULL;
     return true;
 }
 
@@ -206,7 +218,7 @@ bool is_upper(std::string line)
     return true;
 }
 
-std::ofstream file;
+
 void hanlde_post_request(Client &client)
 {
     static int first;
@@ -221,43 +233,46 @@ void hanlde_post_request(Client &client)
         trim_non_printable(extension);
 
         std::string file_name = root + "/" + generate_file_names(extension);
-        // std::cout << file_name << std::endl;
-        // exit(0);
-        file.open(file_name.c_str());
-        if (!file.is_open())
+
+        client.get_request().file.open(file_name.c_str());
+        if (!client.get_request().file.is_open())
         {
             std::cerr << "Error: Could not open file " << file_name << std::endl;
             return;
         }
-        file << client.get_request().get_s_request() << std::flush;
-        if (file.fail())
+        client.get_request().file << client.get_request().get_s_request() << std::flush;
+        if (client.get_request().file.fail())
         {
             std::cerr << "Error: Failed to write to file " << file_name << std::endl;
-            file.close();
+            client.get_request().file.close();
             return;
         }
         writed += client.get_request().get_s_request().size();
-        if (writed >= client.get_request().get_content_length())
+        if (writed >= client.get_request().get_content_length()){
             client.set_all_recv(true);
+            first = writed = 0;
+        }
 
     }
     else
     {
-        if (!file.is_open())
+        if (!client.get_request().file.is_open())
         {
             std::cerr << "Error: File is not open" << std::endl;
             exit(0);
             return;
         }
-        file << client.get_request().get_s_request() << std::flush;
+        client.get_request().file << client.get_request().get_s_request() << std::flush;
         writed += client.get_request().get_s_request().size();
-        if (file.fail())
+        if (client.get_request().file.fail())
         {
             std::cerr << "Error: Failed to write to file" << std::endl;
-            file.close();
+            client.get_request().file.close();
             return;
         }
-        if (writed >= client.get_request().get_content_length())
+        if (writed >= client.get_request().get_content_length()){
             client.set_all_recv(true);
+            first = writed = 0;
+        }
     }
 }

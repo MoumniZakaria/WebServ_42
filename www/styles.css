@@ -86,9 +86,10 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    /* background-color: #45a049; */
+    cursor: pointer;
     transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 button:active {
@@ -132,4 +133,76 @@ button:active {
     text-align: center;
     font-weight: bold;
     margin: 0;
+}
+
+.test {
+    /* position: fixed; */
+    /* display: flex
+; */
+    /* bottom: 20px; */
+    /* left: 50%; */
+    /* transform: translateX(-50%); */
+    width: 350px;
+    position: absolute;
+    height: 80px;
+    background-color: rgb(0, 145, 255);
+    bottom: -300px;
+}
+
+.keep-it-down {
+    position: relative;
+    bottom: 30px;
+}
+.post {
+    position: fixed;
+    margin-left: 10px;
+    /* margin: 100px; */
+}
+
+.delete{
+    background-color: red;
+    position: fixed;
+    /* margin-right: 5px; */
+    left: 54%;
+
+}
+
+.all{
+    position: absolute;
+    transition: filter 0.3s;
+
+}
+
+.modal {
+    display: none;
+    position: relative;
+    z-index: 10;
+    filter: none;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.title{
+    color: black;
+    margin-right: 3%;
+    left: 50%;
+}
+.modal button:hover {
+    background-color: rgb(0, 120, 200);
+}
+
+.form{
+    /* padding: 20px;*/
+    margin-top: 300px;
+}
+
+.close-button{
+    margin-top: -40px;
+    left: 55%;
+    background-color: red;
 }
