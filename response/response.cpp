@@ -65,8 +65,7 @@ void response_to_get(Client &client)
 
     if (stat(client.get_request().get_path().c_str(), &path_stat) == -1)
     {
-        std::string error_page_path = "www/errors/404.html";
-        res = fill_response(client.get_response().get_fileStream(), error_page_path, client);
+        res = fill_response(client.get_response().get_fileStream(), not_found, client);
         client.get_response().set_response_status(404);
         client.get_response().set_response(res);
 
@@ -77,8 +76,7 @@ void response_to_get(Client &client)
     {
         if (access(pat.c_str(), R_OK | W_OK | X_OK) == -1)
         {
-            std::string error_page_path = "www/errors/404.html";
-            res = fill_response(client.get_response().get_fileStream(), error_page_path, client);
+            res = fill_response(client.get_response().get_fileStream(), forb, client);
             client.get_response().set_response_status(403);
             client.get_response().set_response(res);
             return;
@@ -87,8 +85,7 @@ void response_to_get(Client &client)
 
         if (dir == NULL)
         {
-            std::string error_page_path = "www/errors/404.html";
-            res = fill_response(client.get_response().get_fileStream(), error_page_path, client);
+            res = fill_response(client.get_response().get_fileStream(), not_found, client);
             client.get_response().set_response_status(404);
             client.get_response().set_response(res);
             return;
@@ -135,9 +132,7 @@ void response_to_get(Client &client)
     else
     {
         client.get_response().set_response_status(404);
-        res = "HTTP/1.1 404 not found\r\nContent-Type: text/html\r\n\r\n\
-            <html><head><title>404 not found</title></head><body><center><h1>404 not found</h1></center>\
-            <hr><center>42 webserv 0.1</center></body></html>";
+        res = fill_response(client.get_response().get_fileStream(), not_found, client);
     }
     client.get_response().set_response(res);
 }

@@ -112,7 +112,7 @@ void parse_request(Client &client)
     size_t size;
     ss >> size;
     client.get_request().set_content_length(size);
-    if (ss.fail()){
+    if (ss.fail() || size == 0){
         client.get_response().set_response_index(true);
         get_error_res(res, 400 , client);
     }
@@ -179,14 +179,16 @@ void  handle_delete_request(std::string path)
 
 void check_request(Client &client)
 {
-    // std::cout << client.get_request().get_s_request() ;
-    // return ;
+
+
     if (!client.get_request().get_parse_index())
-    parse_request(client);
-    
+        parse_request(client);
     if (client.get_response().get_response_index())
-    return;
+        return;
     
+
+    // client.get_request().print_headers();
+    // exit (22);
     const std::string method = client.get_request().get_method();
     const std::string content_type = client.get_request().get_map_values("Content-Type");
     const std::string transfer_encoding = client.get_request().get_map_values("Transfer-Encoding");
@@ -197,9 +199,9 @@ void check_request(Client &client)
         std::cout << "\033[32m" << "Responsed by ====> " << client.get_response().get_response_status() <<  "\033[0m" << std::endl;
         return;
     }
+    
 
-
-    else if (method == "POST") {
+     if (method == "POST") {
         std::cout << "\033[38;5;214m" << "POST request ====> " << method << " "
                   << client.get_request().get_path() << " " 
                   << client.get_request().get_version() << " " << "\033[0m" << std::endl;
@@ -214,12 +216,11 @@ void check_request(Client &client)
 
         if (content_type.find("boundary=") != std::string::npos && check == "chunked") {
             handle_boundary_chanked(client);
-            // return;
+            return;
         }
 
         else if (content_type.find("boundary=") != std::string::npos) {
             boundary(client);
-            // return;
         }
 
         else if (check == "chunked") {
@@ -231,9 +232,8 @@ void check_request(Client &client)
             handle_x_www_form_urlencoded(client);
             // return;
         }
-        else{
+        else
             hanlde_post_request(client);
-        }
         if (client.get_all_recv() == true){
             std::cout << "\033[32m" << "Responsed by ====> " << client.get_response().get_response_status() <<  "\033[0m" << std::endl;
         }

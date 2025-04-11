@@ -21,11 +21,19 @@
 #include "request/request.hpp"
 #include "client/client.hpp"
 #include "server/server.hpp"
-
+#include "parsing/Confile.hpp"
+#include "parsing/ServerBlock.hpp"
+#include "parsing/RouteBlock.hpp"
+#include <algorithm>
+#include <sys/stat.h>
 
 
 extern std::string root;
 extern std::string not_found;
+extern std::string suc;
+extern std::string bad;
+extern std::string method;
+extern std::string forb;
 
 bool check_request_line(std::string & line);
 std::string removeslashes(const std::string& line);
@@ -49,3 +57,21 @@ void boundary(Client &clinet);
 void chunked(Client &client);
 void trim_non_printable(std::string &str);
 void handle_boundary_chanked(Client & client);
+
+
+//parsing
+
+std::vector<std::string> get_words(std::string& line);
+int check_line(std::vector<std::string>& lines, size_t& i);
+std::string get_root(std::vector <std::string> lines,size_t& i);
+bool fill_rest(ServerBlock& server, std::vector<std::string>& lines, size_t& i);
+std::string trimstr(std::string str);
+std::vector <std::string> get_lines(std::vector <std::string> parts);
+void switch_parts(std::vector <std::string> parts);
+std::vector <RouteBlock> pars_routes(std::vector <std::string>& lines, size_t& i, bool& status);
+std::string get_root(std::vector <std::string> lines,size_t& i);
+std::vector <std::string> pars_index(std::vector <std::string> words,std::string root, bool& status);
+bool check_status(ServerBlock& server);
+bool check_path(std::string &path);
+size_t check_type(std::string &path);
+int check_index(std::vector <std::string> &index, std::string root);

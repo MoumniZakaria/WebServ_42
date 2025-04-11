@@ -7,7 +7,7 @@
 Server::Server() {
     // Add a default server configuration
     signal(SIGPIPE, SIG_IGN);
-    addServerConfig("localhost", "0.0.0.0", DEFAULT_PORT);
+    // addServerConfig("localhost", "0.0.0.0", DEFAULT_PORT);
 }
 
 Server::~Server() {

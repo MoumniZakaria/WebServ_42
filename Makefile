@@ -5,11 +5,18 @@ SRC = request/request.cpp \
 	  c_tools/tools.cpp \
 	  client/client.cpp \
 	  server/server.cpp \
-	  main.cpp
+	  parsing/Confile.cpp\
+	  parsing/ServerBlock.cpp\
+	  parsing/RouteBlock.cpp\
+	  parsing/parsing.cpp\
+	  parsing/pars_route.cpp\
+	  parsing/check_tools.cpp\
+	  main.cpp 
+
 
 OBJ = $(SRC:.cpp=.o)
 NAME = webserv
-HEDER = request/request.hpp
+HEDER = request/request.hpp parsing/Confile.hpp  parsing/ServerBlock.hpp parsing/RouteBlock.hpp
 CFLAGS =  -Wall -Wextra -Werror -std=c++98 -g -fsanitize=address
 
 all : $(NAME)
