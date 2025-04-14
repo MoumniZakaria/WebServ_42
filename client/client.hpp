@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "../webserver.hpp"
+#include "../parsing/ServerBlock.hpp"
 
 class Client{
     private:
@@ -13,6 +14,7 @@ class Client{
         bool all_recv;
         
     public:
+        ServerBlock server_client_obj;
         void set_client_id(int fd);
         int get_client_id();
         Request  & get_request();
@@ -26,7 +28,7 @@ class Client{
         void set_all_recv(bool check);
         bool get_all_recv();
 
-        Client(int fd, struct sockaddr_in Add);
+        Client(int fd, struct sockaddr_in Add, ServerBlock obj);
 
         void fill_map(std::string key , std::string value);
         void print_map();

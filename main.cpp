@@ -328,9 +328,11 @@ int main(int ac, char **av)
         conf.set_server(parts);
         if (conf.status == false)
             return (std::cout << "Fixe config file and try again!" << std::endl, 1);
+        S1.number_of_servers = conf.number_of_server;
         std::vector <ServerBlock> servers = conf.get_server();
-        int port = servers[0].get_port();
-        std::cout << "port: " << port << std::endl;
+        // std::cout << servers[1].get_host() << std::endl;
+        // exit(1);
+        S1.server_block_obj = servers;
         for (size_t i = 0; i < conf.number_of_server ; i++)
         {
             S1.addServerConfig(servers[i].get_host(), servers[i].get_host(), servers[i].get_port());

@@ -42,11 +42,13 @@ size_t Server::getServerCount() const {
 }
 
 void Server::initializeServers() {
+    static int server_idx = 0;
     for (size_t i = 0; i < server_configs.size(); i++) {
         ServerConfig& config = server_configs[i];
         
         // Create, bind, and listen on each server
         config.fd = createServer(config);
+        config.server_index = server_idx++;
         
         if (config.fd >= 0) {
             struct pollfd server_poll;
@@ -57,8 +59,8 @@ void Server::initializeServers() {
             pollfds.push_back(server_poll);
             pollfds_servers.push_back(server_poll);
             
-            std::cout << "Server initialized on " << config.host << ":" << config.port 
-                      << " (FD: " << config.fd << ")" << std::endl;
+            std::cout << "\033[33mServer initialized on " << config.host << ":" << config.port 
+                      << " (FD: " << config.fd << ")\033[0m" << std::endl;
         }
     }
 }
@@ -124,10 +126,11 @@ void Server::listenServer(ServerConfig& /* config */) {
     // Already handled in createServer
 }
 
-int Server::acceptClient(int server_fd, struct sockaddr_in& /* server_addr */) {
+int Server::acceptClient(int server_fd, struct sockaddr_in& , ServerBlock & server_block_obj) {
     struct sockaddr_in client_addr;
     socklen_t addrlen = sizeof(client_addr);
     
+    std::cout << server_block_obj.get_client_body_size() << std::endl;
     int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &addrlen);
     
     if (client_fd < 0) {
@@ -146,8 +149,9 @@ int Server::acceptClient(int server_fd, struct sockaddr_in& /* server_addr */) {
     setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
 
     // Create client object first
-    clients.push_back(Client(client_fd, client_addr));
+    // std::cout << server_block_obj[0].get_port() << std::endl;
     
+    clients.push_back(Client(client_fd, client_addr, server_block_obj));
     // Add to polling structures
     struct pollfd new_pollfd;
     new_pollfd.fd = client_fd;
@@ -208,7 +212,7 @@ void Server::closeClientConnection(size_t index) {
     }
     
     // Close socket and remove from main pollfds
-    std::cout << "Closing client connection. Socket FD: " << client_fd << std::endl;
+    std::cout << "\033[31m from clodse function Closing client connection. Socket FD: " << client_fd << "\033[0m" << std::endl;
     close(client_fd);
     pollfds.erase(pollfds.begin() + index);
 }
@@ -294,7 +298,7 @@ void Server::startServer() {
                 for (size_t j = 0; j < server_configs.size(); j++) {
                     if (pollfds[idx].fd == server_configs[j].fd) {
                         is_server = true;
-                        acceptClient(server_configs[j].fd, server_configs[j].addr);
+                        acceptClient(server_configs[j].fd, server_configs[j].addr, server_block_obj[j]);
 
                         break;
                     }
@@ -322,7 +326,7 @@ void Server::startServer() {
                     // exit(1);
                     if (bytes_read <= 0) {
                         if (bytes_read == 0) {
-                            std::cout << "Client disconnected. Socket FD: " << client_fd << std::endl;
+                            std::cout << "\033[31mFrom rcv Client disconnected. Socket FD: " << client_fd << "\033[0m" << std::endl;
                         } else {
                             std::cerr << "Recv error on fd " << client_fd << ": " << strerror(errno) << std::endl;
                         }
@@ -335,6 +339,8 @@ void Server::startServer() {
                     std::string req(buffer, bytes_read);
                     clients[client_index].get_request().set_s_request(req);
                     check_request(clients[client_index]);
+
+
                     
                     // clients[client_index].set_Alive();
                     
@@ -490,3 +496,16 @@ int Server::getServerIndexByFd(int fd) {
     }
     return -1; // Not found
 }
+
+
+// ServerBlock Server::get_ServerConfByIndex(int index)
+// {
+//     for (size_t i = 0; i < ; i++)
+//     {
+//         /* code */
+//     }
+    
+// }
+
+
+

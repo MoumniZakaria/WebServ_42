@@ -3,7 +3,7 @@
 Client::Client() : client_id(-1) {
 }
 
-Client::Client(int fd, struct sockaddr_in Add)
+Client::Client(int fd, struct sockaddr_in Add, ServerBlock obj)
 {
     request_object = new Request();
     response_object = new Response();
@@ -11,6 +11,7 @@ Client::Client(int fd, struct sockaddr_in Add)
     Client_Addr = Add;
     keep_alive = true;
     all_recv = false;
+    server_client_obj = obj;
     // std::cout << "Client created with fd: " << client_id << std::endl;
     // std::cout << "Client created with req: " << request_object << std::endl;
 }
