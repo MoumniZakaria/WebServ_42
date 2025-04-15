@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parsing.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 06:27:47 by marvin            #+#    #+#             */
-/*   Updated: 2025/03/27 06:27:47 by marvin           ###   ########.fr       */
+/*   Updated: 2025/04/15 18:16:57 by zmoumni          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -406,10 +406,10 @@ bool check_status(ServerBlock& server)
 		return false;
 	std::cout << "host is : " << tmp << std::endl;
 
-	int port = server.get_port();
-	if (port < 0)
-		return false;
-	std::cout << "port: " << port << std::endl;
+	// std::vector port = server.get_port();
+	// if (port < 0)
+	// 	return false;
+	// std::cout << "port: " << port << std::endl;
 
 	std::vector<std::string> names  = server.get_server_names();
 	if (names.empty())

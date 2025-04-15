@@ -5,21 +5,21 @@
 #include <signal.h>
 
 Server::Server() {
-    // Add a default server configuration
+    // Initialize server settings
     signal(SIGPIPE, SIG_IGN);
-    // addServerConfig("localhost", "0.0.0.0", DEFAULT_PORT);
+    // No default server configuration - will be loaded from config file
 }
 
 Server::~Server() {
     this->closeServer();
 }
 
-void Server::addServerConfig(const std::string& host, const std::string& ip, int port) {
-    ServerConfig config(host, ip, port);
+void Server::addServerConfig(const std::string& host, const std::string& ip, std::vector<int> ports) {
+    ServerConfig config(host, ip, ports);
     server_configs.push_back(config);
 }
 
-void Server::setServerConfig(size_t index, const std::string& host, const std::string& ip, int port) {
+void Server::setServerConfig(size_t index, const std::string& host, const std::string& ip, std::vector<int> ports) {
     if (index >= server_configs.size()) {
         std::cerr << "Invalid server index in setServerConfig" << std::endl;
         return;
@@ -27,7 +27,7 @@ void Server::setServerConfig(size_t index, const std::string& host, const std::s
     
     server_configs[index].host = host;
     server_configs[index].ip = ip;
-    server_configs[index].port = port;
+    server_configs[index].ports = ports;
 }
 
 ServerConfig& Server::getServerConfig(size_t index) {
@@ -43,32 +43,61 @@ size_t Server::getServerCount() const {
 
 void Server::initializeServers() {
     static int server_idx = 0;
+    std::vector<ServerConfig> temp_configs;
+    
+    // First pass: create new configs for each port, preserving original configs
     for (size_t i = 0; i < server_configs.size(); i++) {
         ServerConfig& config = server_configs[i];
         
-        // Create, bind, and listen on each server
-        config.fd = createServer(config);
-        config.server_index = server_idx++;
-        
-        if (config.fd >= 0) {
-            struct pollfd server_poll;
-            server_poll.fd = config.fd;
-            server_poll.events = POLLIN;
-            server_poll.revents = 0;
+        // For each port in the vector, create a separate socket
+        for (size_t j = 0; j < config.ports.size(); j++) {
+            // Create a temporary config for this port
+            ServerConfig portConfig = config;
+            int current_port = config.ports[j];
             
-            pollfds.push_back(server_poll);
-            pollfds_servers.push_back(server_poll);
+            // Adjust the temporary config to have only this port
+            portConfig.ports.clear();
+            portConfig.ports.push_back(current_port);
+            portConfig.server_index = server_idx++;
             
-            std::cout << "\033[33mServer initialized on " << config.host << ":" << config.port 
-                      << " (FD: " << config.fd << ")\033[0m" << std::endl;
+            // Create, bind, and listen on the server
+            int server_fd = createServer(portConfig);
+            
+            if (server_fd >= 0) {
+                // Store this socket file descriptor
+                portConfig.fd = server_fd;
+                
+                // Add to poll structures
+                struct pollfd server_poll;
+                server_poll.fd = server_fd;
+                server_poll.events = POLLIN;
+                server_poll.revents = 0;
+                
+                pollfds.push_back(server_poll);
+                pollfds_servers.push_back(server_poll);
+                
+                temp_configs.push_back(portConfig);
+                
+                std::cout << "\033[33mServer initialized on " << portConfig.host << ":" 
+                          << current_port << " (FD: " << server_fd << ")\033[0m" << std::endl;
+            }
         }
     }
+    
+    // Replace original configs with expanded configs
+    server_configs = temp_configs;
 }
 
 int Server::createServer(ServerConfig& config) {
+    if (config.ports.empty()) {
+        std::cerr << "No port specified for server " << config.host << std::endl;
+        return -1;
+    }
+    
+    int port = config.ports[0];
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
-        std::cerr << "Socket creation failed for " << config.host << ":" << config.port 
+        std::cerr << "Socket creation failed for " << config.host << ":" << port 
                   << " - " << strerror(errno) << std::endl;
         return -1;
     }
@@ -80,7 +109,7 @@ int Server::createServer(ServerConfig& config) {
     // Set socket options
     int opt = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
-        std::cerr << "Setsockopt failed for " << config.host << ":" << config.port 
+        std::cerr << "Setsockopt failed for " << config.host << ":" << port 
                   << " - " << strerror(errno) << std::endl;
         close(server_fd);
         return -1;
@@ -89,7 +118,7 @@ int Server::createServer(ServerConfig& config) {
     // Set up address structure
     memset(&config.addr, 0, sizeof(config.addr));
     config.addr.sin_family = AF_INET;
-    config.addr.sin_port = htons(config.port);
+    config.addr.sin_port = htons(port);
     
     // Convert IP address string to network format
     if (inet_pton(AF_INET, config.ip.c_str(), &config.addr.sin_addr) <= 0) {
@@ -100,7 +129,7 @@ int Server::createServer(ServerConfig& config) {
 
     // Bind the socket
     if (bind(server_fd, (struct sockaddr*)&config.addr, sizeof(config.addr)) < 0) {
-        std::cerr << "Bind failed for " << config.host << ":" << config.port 
+        std::cerr << "Bind failed for " << config.host << ":" << port 
                   << " - " << strerror(errno) << std::endl;
         close(server_fd);
         return -1;
@@ -108,7 +137,7 @@ int Server::createServer(ServerConfig& config) {
 
     // Listen for connections
     if (listen(server_fd, MAX_CLIENTS) < 0) {
-        std::cerr << "Listen failed for " << config.host << ":" << config.port 
+        std::cerr << "Listen failed for " << config.host << ":" << port 
                   << " - " << strerror(errno) << std::endl;
         close(server_fd);
         return -1;
@@ -148,10 +177,9 @@ int Server::acceptClient(int server_fd, struct sockaddr_in& , ServerBlock & serv
     int nodelay = 1;
     setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
 
-    // Create client object first
-    // std::cout << server_block_obj[0].get_port() << std::endl;
-    
+    // Create client object
     clients.push_back(Client(client_fd, client_addr, server_block_obj));
+    
     // Add to polling structures
     struct pollfd new_pollfd;
     new_pollfd.fd = client_fd;
@@ -167,7 +195,7 @@ int Server::acceptClient(int server_fd, struct sockaddr_in& , ServerBlock & serv
     
     if (server_index >= 0) {
         std::ostringstream ss;
-        ss << server_configs[server_index].host << ":" << server_configs[server_index].port;
+        ss << server_configs[server_index].host << ":" << server_configs[server_index].ports[0];
         server_info = ss.str();
     } else {
         server_info = "unknown server";
@@ -212,7 +240,7 @@ void Server::closeClientConnection(size_t index) {
     }
     
     // Close socket and remove from main pollfds
-    std::cout << "\033[31m from clodse function Closing client connection. Socket FD: " << client_fd << "\033[0m" << std::endl;
+    std::cout << "\033[31mClosing client connection. Socket FD: " << client_fd << "\033[0m" << std::endl;
     close(client_fd);
     pollfds.erase(pollfds.begin() + index);
 }
@@ -299,7 +327,6 @@ void Server::startServer() {
                     if (pollfds[idx].fd == server_configs[j].fd) {
                         is_server = true;
                         acceptClient(server_configs[j].fd, server_configs[j].addr, server_block_obj[j]);
-
                         break;
                     }
                 }
@@ -322,15 +349,13 @@ void Server::startServer() {
                     // Process client request
                     char buffer[16384] = {0};
                     ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-                    // std::cout << "Received data from client: " << buffer << std::endl;
-                    // exit(1);
+                    
                     if (bytes_read <= 0) {
                         if (bytes_read == 0) {
-                            std::cout << "\033[31mFrom rcv Client disconnected. Socket FD: " << client_fd << "\033[0m" << std::endl;
+                            std::cout << "\033[31mClient disconnected. Socket FD: " << client_fd << "\033[0m" << std::endl;
                         } else {
                             std::cerr << "Recv error on fd " << client_fd << ": " << strerror(errno) << std::endl;
                         }
-                        std::cout << bytes_read << " hereeeeeeeeeeeeeeeeeeeee" << std::endl;
                         closeClientConnection(idx);
                         continue;
                     }
@@ -339,10 +364,6 @@ void Server::startServer() {
                     std::string req(buffer, bytes_read);
                     clients[client_index].get_request().set_s_request(req);
                     check_request(clients[client_index]);
-
-
-                    
-                    // clients[client_index].set_Alive();
                     
                     // If we've received all data, switch to write mode
                     if (clients[client_index].get_all_recv()) {
@@ -369,7 +390,6 @@ void Server::startServer() {
                 
                 // Send the response
                 handleClientWrite(idx);
-                // std::cout << idx << " Sending response to client: " << client_fd << std::endl;
                 
                 // Check if file stream has ended
                 if (client.get_response().get_fileStream().eof()) {
@@ -382,18 +402,12 @@ void Server::startServer() {
                     } else {
                         // Reset client for the next request
                         client.reset();
-                        // closeClientConnection(idx);
                     }
                 }
             }
         }
     }
 }
-
-
-// void Server::handleClientRead(size_t /* index */) {
-//     // This functionality is now integrated in startServer method
-// }
 
 void Server::handleClientWrite(size_t index) {
     if (index >= pollfds.size()) {
@@ -419,7 +433,7 @@ void Server::handleClientWrite(size_t index) {
     if (!client.get_request().is_string_req_send) {
         const std::string& response = client.get_response().get_response();
         ssize_t bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
-        std::cout << " >>" << response << std::endl;
+        
         if (bytes_sent < 0) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
                 return; // Retry in next POLLOUT
@@ -474,7 +488,7 @@ void Server::handleClientWrite(size_t index) {
                 return; // Try again later
             }
         }
-}
+    }
 }
 
 void Server::getClientIndexByFd(int fd, size_t& client_index) {
@@ -496,16 +510,3 @@ int Server::getServerIndexByFd(int fd) {
     }
     return -1; // Not found
 }
-
-
-// ServerBlock Server::get_ServerConfByIndex(int index)
-// {
-//     for (size_t i = 0; i < ; i++)
-//     {
-//         /* code */
-//     }
-    
-// }
-
-
-

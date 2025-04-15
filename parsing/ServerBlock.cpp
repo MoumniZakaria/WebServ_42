@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   ServerBlock.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 00:36:22 by marvin            #+#    #+#             */
-/*   Updated: 2025/03/27 00:36:22 by marvin           ###   ########.fr       */
+/*   Updated: 2025/04/15 18:29:55 by zmoumni          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ServerBlock.hpp"
+#include "../webserver.hpp"
 
 ServerBlock::ServerBlock()
 {
@@ -72,12 +72,18 @@ std::string& ServerBlock::get_host(void)
     return Host;
 }
 
-void ServerBlock::set_port(int set_port)
+void ServerBlock::set_port(std::vector <int> set_port)
 {
-    Port = set_port;
+    std::vector<int> Port = set_port;
+    size_t i = 0;
+    while (i < set_port.size())
+    {
+        Port.push_back(set_port[i]);
+        i++;
+    }    
 }
 
-int ServerBlock::get_port(void)
+std::vector<int> ServerBlock::get_port(void)
 {
     return Port;
 }
