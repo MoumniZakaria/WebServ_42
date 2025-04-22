@@ -3,15 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Confile.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 23:50:39 by marvin            #+#    #+#             */
-/*   Updated: 2025/03/26 23:50:39 by marvin           ###   ########.fr       */
+/*   Updated: 2025/04/22 12:13:57 by zmoumni          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CONFILE_HPP
-#define CONFILE_HPP
+#pragma once
 
 #include "../webserver.hpp"
 #include "ServerBlock.hpp"
@@ -31,4 +30,3 @@ class Confile{
         void set_server(std::vector<std::string> lines);
         std::vector <ServerBlock>& get_server();
 };
-#endif

@@ -6,7 +6,7 @@
 /*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 00:36:22 by marvin            #+#    #+#             */
-/*   Updated: 2025/04/15 18:29:55 by zmoumni          ###   ########.fr       */
+/*   Updated: 2025/04/22 12:15:36 by zmoumni          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,18 +72,12 @@ std::string& ServerBlock::get_host(void)
     return Host;
 }
 
-void ServerBlock::set_port(std::vector <int> set_port)
+void ServerBlock::set_port(int set_port)
 {
-    std::vector<int> Port = set_port;
-    size_t i = 0;
-    while (i < set_port.size())
-    {
-        Port.push_back(set_port[i]);
-        i++;
-    }    
+    Port = set_port;
 }
 
-std::vector<int> ServerBlock::get_port(void)
+int ServerBlock::get_port(void)
 {
     return Port;
 }

@@ -3,15 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   RouteBlock.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 02:28:07 by marvin            #+#    #+#             */
-/*   Updated: 2025/03/27 02:28:07 by marvin           ###   ########.fr       */
+/*   Updated: 2025/04/22 12:15:13 by zmoumni          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef ROUTEBLOCK_HPP
-#define ROUTEBLOCK_HPP
+#pragma once
 #include "../webserver.hpp"
 
 class RouteBlock{
@@ -47,5 +46,3 @@ class RouteBlock{
         // std::string get_redirection(void);
 };
 
-
-#endif

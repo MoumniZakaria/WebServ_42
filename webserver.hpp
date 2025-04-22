@@ -20,23 +20,23 @@
 #include <algorithm>
 #include <sys/stat.h>
 
-// Forward declarations
 class Request;
 class Response;
 class Client;
 class Server;
-// class ServerBlock;
-class RouteBlock;
 class Confile;
+class ServerBlock;
+class RouteBlock;
 
-// Now include the actual headers
-#include "response/response.hpp"
-#include "request/request.hpp"
-#include "parsing/RouteBlock.hpp"
-#include "parsing/ServerBlock.hpp"
-#include "client/client.hpp"
-#include "server/server.hpp"
-#include "parsing/Confile.hpp"
+#include "./response/response.hpp"
+#include "./request/request.hpp"
+#include "./client/client.hpp"
+#include "./server/server.hpp"
+#include "./parsing/Confile.hpp"
+#include "./parsing/ServerBlock.hpp"
+#include "./parsing/RouteBlock.hpp"
+
+
 
 extern std::string root;
 extern std::string not_found;

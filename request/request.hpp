@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../webserver.hpp"
-class Client;
 
 class Request
 {
