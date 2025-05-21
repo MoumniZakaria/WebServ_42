@@ -1,11 +1,4 @@
 #include "../webserver.hpp"
-std::string root = "www";
-std::string not_found = "www/pages/404.html";
-std::string suc = "www/pages/200.html";
-std::string bad = "www/pages/400.html";
-std::string method = "www/pages/405.html";
-std::string forb = "www/pages/403.html";
-
 
 
 void  trim(std::string& str) {
@@ -22,48 +15,6 @@ void  trim(std::string& str) {
 
     str = str.substr(start, end - start);
 }
-
-
-void get_error_res(std::string &res, int status , Client &client)
-{
-    if (status == 400)
-    {
-        client.get_response().set_response_status(400);
-        res = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n\
-        <html><head><title>400 Bad Request</title></head><body><center><h1>400 Bad Request</h1></center>\
-        <hr><center>42 webserv 0.1</center></body></html>";
-    }
-    else if (status == 405)
-    {
-        client.get_response().set_response_status(405);
-        res = "HTTP/1.1 405 Not Allowed\r\nContent-Type: text/html\r\n\r\n\
-        <html><head><title>405 Not Allowed</title></head><body><center><h1>405 Not Allowed</h1></center>\
-        <hr><center>42 webserv 0.1</center></body></html>";
-    }
-    else if (status == 505)
-    {
-        client.get_response().set_response_status(505);
-        res = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Type: text/html\r\n\r\n\
-        <html><head><title>505 HTTP Version Not Supported</title></head><body><center><h1>505 HTTP Version Not Supported</h1></center>\
-        <hr><center>42 webserv 0.1</center></body></html>";
-    }
-}
-
-// void get_default_index(std::string &res, std::string path , Client & client)
-// {
-//     std::ifstream f;
-//     if (path == "/"){
-//         std::string tmp = root + "/index.html";
-//         f.open(tmp.c_str());
-//     }
-//     else
-//         f.open(path.c_str());
-//     std::string line;
-//     client.get_response().set_response_status(200);
-//     res = "HTTP/1.1 200 ok\r\nContent-Type: text/html\r\n\r\n";
-//     while (std::getline(f, line))
-//         res += line;
-// }
 
 std::string getContentType(std::string filePath) {
     std::map<std::string, std::string> mimeTypes;
@@ -96,28 +47,30 @@ std::string getContentType(std::string filePath) {
 }
 
 
-std::string fill_response(std::ifstream& fileStream,  std::string& filePath , Client &client) {
-    fileStream.open(filePath.c_str(), std::ios::binary | std::ios::ate);
-    
-    if (!fileStream) {
-        client.get_response().set_response_status(500);
-        std::cout  << "Failed to open file: " << filePath << std::endl;
-        return  "HTTP/1.1 500 internal error\r\nContent-Type: text/html\r\n\r\n\
-        <html><head><title>500 internal server Error</title></head><body><center><h1>500 internal server Error</h1></center>\
-        <hr><center>42 webserv 0.1</center></body></html>";
+std::string fill_response(std::ifstream& fileStream,  std::string& filePath , Client &client , int status ) {
+
+    fileStream.close();
+    fileStream.open(filePath.c_str(), std::ios::ate);
+
+    if (!fileStream.is_open()) {
+        std::cout << "cat't open " << filePath << std::endl; 
+        return "";
     }
 
     std::streampos fileSize = fileStream.tellg();
     fileStream.seekg(0, std::ios::beg);
     client.get_response().set_response_status(200);
     std::ostringstream response;
-    response << "HTTP/1.1 200 OK\r\n";
+    response << "HTTP/1.1 ";
+    response <<  status ;
+    response << " OK\r\n";
     response << "Content-Type:" + getContentType(filePath)  + "\r\n";
     response << "Content-Length: " << fileSize << "\r\n";
     response << "Accept-Ranges: bytes\r\n";
     response << "Connection: close\r\n";
     response << "\r\n";
-    
+
+
     return response.str();
 }
 

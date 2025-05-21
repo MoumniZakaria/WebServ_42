@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RouteBlock.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 02:34:57 by marvin            #+#    #+#             */
-/*   Updated: 2025/04/22 12:14:55 by zmoumni          ###   ########.fr       */
+/*   Updated: 2025/03/27 02:34:57 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,12 @@
 
 RouteBlock::RouteBlock()
 {
+    root = "/html";
+    methods.push_back("GET");
+    methods.push_back("POST");
+    methods.push_back("DELETE");
+    autoindex = false;
+    client_body_temp_path = "/";
     // std::cout << "RouteBlock Default constructor " << std::endl;
 }
 RouteBlock::~RouteBlock()
@@ -41,7 +47,7 @@ RouteBlock& RouteBlock::operator=(const RouteBlock& other)
         this->index = other.index;
         this->cgi_extension = other.cgi_extension;
         this->client_body_temp_path = other.client_body_temp_path;
-        // this->redirection = other.redirection;
+        this->redirections = other.redirections;
     }
     return *this;
 }
@@ -117,11 +123,11 @@ std::string RouteBlock::get_client_body_temp_path(void)
     return client_body_temp_path;
 }
 
-// void RouteBlock::set_redirection(std::string set_redirection)
-// {
-//     redirection = set_redirection;
-// }
-// std::string RouteBlock::get_redirection(void)
-// {
-//     return redirection;
-// }
+void RouteBlock::set_redirections(std::map<int,std::string> set_redirection)
+{
+    redirections.insert(set_redirection.begin(), set_redirection.end());
+}
+std::map <int, std::string> RouteBlock::get_redirections(void)
+{
+    return redirections;
+}

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+</head>
+    <script>
+        let key = getCookie("session_id");
+    
+        if (key) {
+           
+            const url = 'session.py';  
+    
+            fetch(url, {
+                method: 'POST',  
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',  
+                },
+                body: `session_id=${encodeURIComponent(key)}`  
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log('Success:', data); 
+                document.getElementById('content').innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);  
+            });
+        }
+    
+        function getCookie(cname) {
+            let name = cname + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+    </script>
+<body>
+    <h2>Login Form</h2>
+    <form action="script.py" method="POST">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        
+        <input type="submit" value="Login">
+    </form>
+    
+    <div id="content"></div>
+
+</body>
+</html>

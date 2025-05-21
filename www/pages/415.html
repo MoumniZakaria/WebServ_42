@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HTTP 415 Animation</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .http-container {
+      position: relative;
+      width: 300px;
+      height: 200px;
+    }
+
+    .status-box {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #dc3545;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      animation: shake 1s infinite;
+      box-shadow: 0 0 20px rgba(220, 53, 69, 0.4);
+    }
+
+    .status-code {
+      font-size: 3.5rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      opacity: 0;
+      animation: fadeInUp 0.5s 0.3s forwards;
+    }
+
+    .status-message {
+      font-size: 1.1rem;
+      text-align: center;
+      opacity: 0;
+      animation: fadeInUp 0.5s 0.5s forwards;
+    }
+
+    .crossmark {
+      width: 50px;
+      height: 50px;
+      position: absolute;
+      top: -25px;
+      right: -25px;
+      opacity: 0;
+      animation: popIn 0.5s 1s forwards;
+    }
+
+    .cross {
+      stroke: #dc3545;
+      stroke-width: 4;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0); }
+      80% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      50% { transform: translateX(3px); }
+      75% { transform: translateX(-2px); }
+    }
+
+    /* Error lines to simulate broken data */
+    .error-lines {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .error-line {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.2);
+      height: 2px;
+      animation: brokenTransfer 1s linear infinite;
+    }
+
+    @keyframes brokenTransfer {
+      0% { left: 0%; width: 10%; }
+      50% { width: 0%; }
+      100% { left: 100%; width: 10%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="http-container">
+    <!-- Broken error lines -->
+    <div class="error-lines">
+      <div class="error-line" style="top: 25%; animation-delay: 0s"></div>
+      <div class="error-line" style="top: 50%; animation-delay: 0.2s"></div>
+      <div class="error-line" style="top: 75%; animation-delay: 0.4s"></div>
+    </div>
+
+    <!-- Error box -->
+    <div class="status-box">
+      <div class="status-code">415</div>
+      <div class="status-message">Unsupported Media Type</div>
+    </div>
+
+    <!-- Crossmark -->
+    <svg class="crossmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+      <line class="cross" x1="16" y1="16" x2="36" y2="36"/>
+      <line class="cross" x1="36" y1="16" x2="16" y2="36"/>
+    </svg>
+  </div>
+</body>
+</html>

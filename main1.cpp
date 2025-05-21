@@ -327,7 +327,7 @@ int get_parts(char **av, std::vector <std::string>& parts)
     }
     std::string newlastline = trimstr(lines[x]);
     if (newlastline.find(';') != std::string::npos)
-        return (std::cout << "Error ';' at the end of file!" << std::endl, 1);
+        return ( 1);
     infile.clear();
     infile.seekg(0, std::ios::beg);
 
@@ -429,24 +429,35 @@ int main(int ac, char **av)
         S1.server_block_obj = servers;
         for (size_t i = 0; i < conf.number_of_server ; i++)
         {
+            // S1.addServerConfig(servers[i].get_host(), servers[i].get_port() , servers[i].get_server_names());
             S1.addServerConfig(i, servers[i].get_host(), servers[i].get_port(), servers[i].get_server_names());
         }
+        // size of server_configs size:
+        std::cout << "server_configs size: " << S1.getServerCount() << std::endl;
     }
-    else
-    {
-        std::vector <ServerBlock> servers;
-        ServerBlock default_server;
-        default_server.set_dafault_data();
-
-        servers.push_back(default_server);
-        if(set_default_page())
-            return 1;
-        S1.number_of_servers = 1;
-        S1.server_block_obj = servers;
-        S1.addServerConfig(0, servers[0].get_host(), servers[0].get_port(), servers[0].get_server_names());
-        // std::cout << "Usage: ./webserv <config_file>" << std::endl;
-    }
+    // else
+    // {
+    //     std::vector <ServerBlock> servers;
+    //     ServerBlock default_server;
+    //     default_server.set_dafault_data();
+    
+    //     servers.push_back(default_server);
+    //     if(set_default_page())
+    //         return 1;
+    //     S1.number_of_servers = 1;
+    //     S1.server_block_obj = servers;
+    //     S1.addServerConfig(servers[0].get_host(), servers[0].get_port(), servers[0].get_server_names());
+    //     // std::cout << "Usage: ./webserv <config_file>" << std::endl;
+    // }
     S1.startServer();
-   
+    
 }
 
+
+// std::vector <int> portt = conf.get_server()[i].get_port();
+// std::cout << "portt size: " << portt.size() << std::endl;
+// for (size_t j = 0; j < portt.size(); j++)
+// {
+//     std::cout << "portt[" << j << "] = " << portt[j] << std::endl;
+// }
+// S1.addServerConfig(servers[i].get_host(), servers[i].get_port(), servers[i].get_server_names());

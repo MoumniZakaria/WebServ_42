@@ -4,7 +4,6 @@ Request::Request()
 {
     index = false;
     is_string_req_send = false;
-
 }
 Request::~Request() {};
 
@@ -110,7 +109,9 @@ std::string removeslashes(const std::string &line)
 
 bool Request::fill_headers_map(std::istringstream &ob, std::string &res, Client &client)
 {
-    client.set_Alive(false);
+    (void)res;
+
+    std::string error_path;
     std::string line, key, value;
     while (std::getline(ob, line))
     {
@@ -127,21 +128,20 @@ bool Request::fill_headers_map(std::istringstream &ob, std::string &res, Client 
             key = line.substr(pos + 1);
         if (key.empty())
         {
-            get_error_res(res, 400, client);
+            set_response_error(&client , 400);
             headers_map.clear();
             return false;
         }
         if (key[0] == 32)
         {
-            // std::cout << "400 Bad requeste 2 "<< "|" << (int)key[0] << "|"  << std::endl;
-            get_error_res(res, 400, client);
+            set_response_error(&client , 400);
             headers_map.clear();
             return false;
         }
         trim_non_printable(value);
         trim(value);
-        if (key == "Connection" && value == "keep-alive")
-            client.set_Alive(true);
+        if (key == "Connection" && value == "close")
+            client.set_Alive(false);
         headers_map[key] = value;
     }
     return true;
@@ -164,6 +164,8 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
     char **str = ft_split(pa.c_str(), '/');
     int entry = 0;
     int sorty = 0;
+    (void)res;
+    std::string error_path;
     for (int i = 0; str[i]; i++)
     {
         if (strcmp(str[i], "..") == 0)
@@ -172,7 +174,7 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
             entry++;
         if (sorty > entry)
         {
-            get_error_res(res, 400, client);
+            set_response_error(&client , 400);
             return false;
         }
     }
@@ -199,7 +201,8 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
     }
     pa += oss.str();
     int i = 0;
-    while(str[i]){
+    while (str[i])
+    {
         free(str[i]);
         i++;
     }
@@ -218,7 +221,6 @@ bool is_upper(std::string line)
     return true;
 }
 
-
 void hanlde_post_request(Client &client)
 {
     static int first;
@@ -232,7 +234,7 @@ void hanlde_post_request(Client &client)
         std::string extension = content_type.substr(pos + 1);
         trim_non_printable(extension);
 
-        std::string file_name = root + "/" + generate_file_names(extension);
+        std::string file_name = client.server_client_obj.get_server_root() + "/" + ft_generate_file_names(client, extension);
 
         client.get_request().file.open(file_name.c_str());
         if (!client.get_request().file.is_open())
@@ -248,18 +250,18 @@ void hanlde_post_request(Client &client)
             return;
         }
         writed += client.get_request().get_s_request().size();
-        if (writed >= client.get_request().get_content_length()){
+        if (writed >= client.get_request().get_content_length())
+        {
             client.set_all_recv(true);
             first = writed = 0;
         }
-
     }
     else
     {
         if (!client.get_request().file.is_open())
         {
             std::cerr << "Error: File is not open" << std::endl;
-            exit(0);
+            // exit(0);
             return;
         }
         client.get_request().file << client.get_request().get_s_request() << std::flush;
@@ -270,7 +272,8 @@ void hanlde_post_request(Client &client)
             client.get_request().file.close();
             return;
         }
-        if (writed >= client.get_request().get_content_length()){
+        if (writed >= client.get_request().get_content_length())
+        {
             client.set_all_recv(true);
             first = writed = 0;
         }

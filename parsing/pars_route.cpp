@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   pars_route.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoumni <zmoumni@student.42.fr>            +#+  +:+       +#+        */
+/*   By: kid-ouis <kid-ouis@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/05 12:01:28 by kid-ouis          #+#    #+#             */
-/*   Updated: 2025/04/22 12:14:06 by zmoumni          ###   ########.fr       */
+/*   Updated: 2025/05/13 14:35:12 by kid-ouis         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../webserver.hpp"
+
 
 int check_first_line(RouteBlock& route, std::vector <std::string>& lines, size_t i, bool& status)
 {
@@ -26,7 +27,8 @@ int check_first_line(RouteBlock& route, std::vector <std::string>& lines, size_t
 	if (words[1][last_char] == '{')
 	{
 		URI = words[1].substr(0, last_char);
-		// std::cout << "uri: " << URI << std::endl;	
+		if (URI.find('{') != std::string::npos || URI.find('}') != std::string::npos)
+			return (status = false, std::cout << "Error unwanted braces 111" << std::endl, 1);
 		route.set_URI(URI);
 		s = 2;
 	}
@@ -58,7 +60,6 @@ bool isinvec(std::vector<std::string> vec_methods, std::string method)
 std::vector  <std::string> pars_methods(std::vector <std::string> words, bool& check)
 {
 	size_t i = 1;
-	// size_t j = i;
 	std::vector <std::string> methods;
 	if (words.size() == 1)
 		return (check = false, std::cout << "Error There is no methods" << std::endl, methods);
@@ -72,17 +73,11 @@ std::vector  <std::string> pars_methods(std::vector <std::string> words, bool& c
 		}
 		i++;
 	}
-		// for (std::vector <std::string>::iterator it = methods.begin(); it != methods.end(); ++it)
-    	// {
-		// 	std::cout << "method: " << *it << std::endl;
-		// }
-			// std::cout << "#==> methods get parsed" << std::endl;
 	return methods;	
 }
 
 bool pars_autoindex(std::vector <std::string> words, bool& check)
 {
-		// std::cout << "#==> autoindex get parsed" << std::endl;
 	if (words.size() == 1)
 		return (check = false, std::cout << "Error no autoindex parameter" << std::endl, false);
 	if (words.size() > 2)
@@ -104,10 +99,11 @@ std::vector <std::string> pars_cgi_ext(std::vector <std::string> words, bool& ch
 	{
 		if (words[i][0] != '.')
 			return (check = false , std::cout << "Error Invalid extension" << std::endl, extension);
+		if (words[i].find('{') != std::string::npos || words[i].find('}') != std::string::npos)
+			return (check = false, std::cout << "Error unwanted braces 2222" << std::endl, extension);
 		extension.push_back(words[i]);
 		i++;
 	}
-		// std::cout << "#==> extension get parsed" << std::endl;
 	return extension;
 }
 
@@ -120,27 +116,56 @@ std::string pars_temp_path(std::vector <std::string> words,bool& check)
 		return (check= false, std::cout << "Error too many temp_path" << std::endl, tmp_path);
 	//check the path
 	if (words[1].find('{') != std::string::npos || words[1].find('}') != std::string::npos)
-		return (std::cout << "Error unwanted braces" << std::endl, tmp_path);
+		return (check = false, std::cout << "Error unwanted braces" << std::endl, tmp_path);
 	if (check_path(words[1]) == false)
-		return (std::cout << "Error client_body_temp_path not exist" << std::endl, tmp_path);
+		return (check = false, std::cout << "Error client_body_temp_path not exist" << std::endl, tmp_path);
 	if (check_type(words[1]) != 0)
-		return (std::cout << "Error client_body_temp_path not directory" << std::endl, tmp_path);
+		return (check  = false , std::cout << "Error client_body_temp_path not directory" << std::endl, tmp_path);
 	tmp_path = words[1];
 		// std::cout << "#==> temp_path get parsed" << std::endl;
 	return (tmp_path);
 }
 
+std::map <int, std::string> get_redirection(std::vector<std::string> words, bool &status)
+{
+    size_t i = 1;
+    size_t j = 0;
+    int code;
+    std::map <int, std::string> redirection;
+    if(words.size() < 3)
+        return (status = false, std::cout << "Error invalid return redirection directive" << std::endl, redirection);
+    size_t last = words.size() - 1;
+    while (i < last)
+    {
+        j = 0;
+        while(j < words[i].size())
+        {
+            if (!isdigit(words[i][j]))
+                return (status = false, std:: cout << "Error invalid redirection's status code" << std::endl , redirection);
+            j++;
+        }
+        std::stringstream ss(words[i]);
+        ss >> code;
+        if (code != 301 && code != 302 && code != 303 && code != 307 && code != 308)
+            return (status = false, std:: cout << "Error invalid code" << std::endl , redirection);
+        redirection[code] = words[last];
+        i++;
+    }
+    return redirection;
+}
 
 
 bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 {
 	bool status = true;
+	
 	std::vector<std::string> words = get_words(lines[i]);
 	while (i < lines.size())
 	{
+		if (status == false)
+			return false;
 		if (words[0] == "}" || words[0][0] == '}')
 		{
-			// std::cout << "***line to end routeblock " << lines[i] << "i:" << i << std::endl;
 			if (words[0] == "}" && words.size() == 1) //case of  we have just }
 				return (std::cout << "end of RouteBlock and  unexpected ';' after brace" << std::endl, false);//false cause even if the routeblock filled if there is char after brace it's error
 			if (words[0].length() > 1) // case of have }location or  }}
@@ -155,7 +180,6 @@ bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 				rest += " ";
 				s++;
 			}
-			// std::cout << "rest: " << rest << std::endl;
 			lines[i] = rest;
 			return (std::cout << "end of RouteBlock" << std::endl, status);				
 		}
@@ -164,11 +188,17 @@ bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 		else if (words[0] == "autoindex")
 			route.set_autoindex(pars_autoindex(words, status));
 		else if (words[0] == "index")
-			route.set_index(pars_index(words, route.get_root(), status));
+			route.set_index(pars_index(words, status));
 		else if (words[0] == "cgi_extension")
 			route.set_cgi_ext(pars_cgi_ext(words, status));
 		else if (words[0] == "client_body_temp_path")
 			route.set_client_body_temp_path(pars_temp_path(words, status));
+		else if (words[0] == "root")
+			route.set_root(get_root(words, status));
+		else if (words[0] == "return")
+		{
+            route.set_redirections(get_redirection(words, status));
+		}
 		else
 		{
 			std::cout << "word: " << words[0] << " invalid element in routeblock" << std::endl;
@@ -212,46 +242,27 @@ bool check_route_status(RouteBlock& route, bool status)
 std::vector <RouteBlock> pars_routes(std::vector <std::string>& lines, size_t& i, bool& status)
 {
 	size_t hold = i;
-	// bool filled = true;
 	std::vector <RouteBlock> vec_routes;
 	
-	// std::cout << "@@@@ parsing root started @@@@" << std::endl;
 	while(i < lines.size())
 	{
 		if (status == false)
 			break;
-		// std::cout <<
-		// std::cout << "line to check in pars_route: " << lines[i] << " *i : " << i << std::endl;
 		RouteBlock route;
 		if (check_first_line(route, lines, i, status))
+		{
 			return (vec_routes);
-		// std::cout << "line after chckline: " << lines[i] << " i: " << i  << std::endl;
+		}
 		std::vector <std::string> words = get_words(lines[i]);
 		hold  = i;
-		route.set_root(get_root(lines, i));
-		lines.erase(lines.begin() + i);
-		std::string root = route.get_root();
-		if(root.empty())
-		{
-			i = hold;
-			status = false;
-			return vec_routes;
-		}
-		// std::cout << "root: " << root << std::endl;
 		i = hold;//back to first line in routeblock after getting root;
-		// std::cout << "fill route in i: " << i << " line: "<< lines[i]<< std::endl;
 		status = fill_route(route, lines , i);
-		// std::cout << "filled after fill route: " << filled << std::endl;
-		// filled = check_status_route();
 		if (!status)
 			return (status = false, std::cout << "not valid routeblock"  << std::endl, vec_routes);
-		//we need to check if the element rewuired for location are ffiled even if status true
-		// std::cout << "route block end in " << lines[i] << " *i : " << i << std::endl;
-
-			// break;
+		// status = check_index(route.get_index(), route.get_root());
+		// if (!status)
+		// 	return (status = false, std::cout << "not valid routeblock"  << std::endl, vec_routes);
 		vec_routes.push_back(route);
-		// i++;
-		// std::cout << "====================> next routeblock : "  << std::endl;
 	}
 	 return vec_routes;
 }
