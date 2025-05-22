@@ -11,9 +11,10 @@ Client::Client(int fd, struct sockaddr_in Add, ServerBlock obj)
     response_object = new Response();
     client_id = fd;
     Client_Addr = Add;
-    keep_alive = 0;
-    all_recv = 1;
+    keep_alive = 1;
+    all_recv = 0;
     server_client_obj = obj;
+    updateLastActivity();
     // std::cout << "Client created with fd: " << client_id << std::endl;
     // std::cout << "Client created with req: " << request_object << std::endl;
 }
@@ -85,4 +86,18 @@ void Client::reset() {
     response_object = new Response();
     keep_alive = 1;
     all_recv = false;
+    updateLastActivity();
+}
+void Client::updateLastActivity() {
+    // print the time of last activity
+    std::cout << "Last activity updated at: " << ctime(&last_activity) << std::endl;
+    last_activity = time(NULL);
+}
+
+bool Client::isExpired() const {
+    std::cout << "Checking if client is expired..." << keep_alive << std::endl;
+    // if (!keep_alive) return false; // Not a keep-alive connection
+    
+    time_t now = time(NULL);
+    return (now - last_activity) >= 10; // 10 seconds timeout
 }

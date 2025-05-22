@@ -187,6 +187,7 @@ void Server::closeClientConnection(size_t index) {
     if (fileStream.is_open()) {
         fileStream.close();
     }
+    // check if the client is expired
     if (keepAlive == 0) {
         // Find client index in pollfds_clients
         size_t client_poll_index = SIZE_MAX;
@@ -211,13 +212,24 @@ void Server::closeClientConnection(size_t index) {
         pollfds.erase(pollfds.begin() + index);
     } else {
         // If keep-alive is on, keep the connection open
-        std::cout << "\033[35mClient connection kept alive. Socket FD: " << client_fd << "\033[0m" << std::endl;
         
+
+        std::cout << "clients[client_index].isExpired(): " << clients[client_index].isExpired() << std::endl;
         // Reset the client state for the next request but keep it in the vectors
-        clients[client_index].reset();
-        
-        // Make sure we switch back to listening for new requests
-        pollfds[index].events = POLLIN;
+        if (!clients[client_index].isExpired())
+        {
+            // set the client keep alive to 0
+            clients[client_index].set_Alive(0);
+            closeClientConnection(index);
+        }
+        else{
+            
+            std::cout << "\033[35mClient connection kept alive. Socket FD: " << client_fd << "\033[0m" << std::endl;
+            clients[client_index].reset();
+            
+            // Make sure we switch back to listening for new requests
+            pollfds[index].events = POLLIN;
+        }
     }
 }
 
@@ -253,6 +265,145 @@ void Server::closeServer() {
     clients.clear();
 }
 
+// void Server::startServer() {
+//     // Initialize all server sockets
+//     initializeServers();
+    
+//     std::cout << "All servers started and listening..." << std::endl;
+    
+//     while (true) {
+//         // Wait for activity on any socket
+//         int poll_count = poll(pollfds.data(), pollfds.size(), -1);
+//         if (poll_count < 0) {
+//             std::cerr << "Poll failed: " << strerror(errno) << std::endl;
+//             continue;
+//         }
+        
+//         // Iterate backwards to safely remove elements if needed
+//         for (int i = static_cast<int>(pollfds.size() - 1); i >= 0; i--) {
+//             size_t idx = static_cast<size_t>(i);
+            
+//             // Skip invalid indices
+//             if (idx >= pollfds.size()) continue;
+            
+//             // Handle errors
+//             if (pollfds[idx].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+//                 // Check if this is a server or client fd
+//                 bool is_server = false;
+//                 for (size_t j = 0; j < pollfds_servers.size(); j++) {
+//                     if (pollfds[idx].fd == pollfds_servers[j].fd) {
+//                         is_server = true;
+//                         std::cerr << "Server socket error on fd " << pollfds[idx].fd << std::endl;
+//                         break;
+//                     }
+//                 }
+                
+//                 if (!is_server) {
+//                     // Client socket error
+//                     closeClientConnection(idx);
+//                 }
+//                 continue;
+//             }
+            
+//             // Handle incoming data/connections
+//             if (pollfds[idx].revents & POLLIN) {
+//                 // Check if this is a server socket (accept new connection)
+//                 bool is_server = false;
+//                 for (size_t j = 0; j < server_configs.size(); j++) {
+//                     if (pollfds[idx].fd == server_configs[j].fd) {
+//                         is_server = true;
+//                         // Find matching ServerBlock for this server config
+//                         int server_block_idx = server_configs[j].server_block_index;
+//                         // Make sure index is valid
+//                         if (server_block_idx >= 0 && server_block_idx < static_cast<int>(server_block_obj.size())) {
+//                             // Pass the correct ServerBlock to acceptClient
+//                             acceptClient(server_configs[j].fd, server_block_obj[server_block_idx]);
+//                         } else {
+//                             std::cerr << "Invalid server_block_idx: " << server_block_idx << std::endl;
+//                         }
+//                         break;
+//                     }
+//                 }
+                
+//                 if (!is_server) {
+//                     // Client socket - read data
+//                     int client_fd = pollfds[idx].fd;
+                    
+//                     // Find the client by fd
+//                     size_t client_index;
+//                     getClientIndexByFd(client_fd, client_index);
+                    
+//                     if (client_index >= clients.size()) {
+//                         // Client not found - close connection
+//                         closeClientConnection(idx);
+//                         continue;
+//                     }
+                    
+//                     // Process client request
+//                     char buffer[16384] = {0};
+//                     ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+//                     std::cout << "Bytes read: " << bytes_read << std::endl;
+//                     std::cout << "Buffer: " << buffer << std::endl;
+//                     if (bytes_read <= 0) {
+//                         if (bytes_read == 0) {
+//                             if (clients[client_index].get_Alive() == 0) {
+//                                 std::cout << "Client disconnected. Socket FD: " << client_fd << "\033[0m" << std::endl;
+//                             }
+//                         } else {
+//                             std::cerr << "Recv error on fd " << client_fd << ": " << strerror(errno) << std::endl;
+//                         }
+//                         closeClientConnection(idx);
+//                         continue;
+//                     }
+                    
+//                     // Process the request data
+//                     std::string req(buffer, bytes_read);
+//                     clients[client_index].get_request().set_s_request(req);
+//                     check_request(clients[client_index]);
+                    
+//                     // If we've received all data, switch to write mode
+//                     if (clients[client_index].get_all_recv()) {
+//                         pollfds[idx].events = POLLOUT;
+//                     }
+//                 }
+//             }
+//             // Handle outgoing data
+//             else if (pollfds[idx].revents & POLLOUT) {
+//                 int client_fd = pollfds[idx].fd;
+                
+//                 // Find the client by fd
+//                 size_t client_index;
+//                 getClientIndexByFd(client_fd, client_index);
+                
+//                 if (client_index >= clients.size()) {
+//                     // Client not found - close connection
+//                     std::cerr << "No matching client found for fd: " << client_fd << std::endl;
+//                     closeClientConnection(idx);
+//                     continue;
+//                 }
+                
+//                 Client& client = clients[client_index];
+                
+//                 // Send the response
+//                 handleClientWrite(idx);
+                
+//                 // Check if file stream has ended
+//                 if (client.get_response().get_fileStream().eof()) {
+//                     // Switch back to POLLIN for next request
+//                     pollfds[idx].events = POLLIN;
+                    
+//                     // Check if we need to close the connection
+//                     if (!client.get_Alive()) {
+//                         closeClientConnection(idx);
+//                     } else {
+//                         // Reset client for the next request
+//                         client.reset();
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 void Server::startServer() {
     // Initialize all server sockets
     initializeServers();
@@ -260,10 +411,18 @@ void Server::startServer() {
     std::cout << "All servers started and listening..." << std::endl;
     
     while (true) {
-        // Wait for activity on any socket
-        int poll_count = poll(pollfds.data(), pollfds.size(), -1);
+        // Check for expired keep-alive connections
+        checkExpiredConnections();
+        
+        // Wait for activity on any socket with 1-second timeout
+        int poll_count = poll(pollfds.data(), pollfds.size(), 1000);
         if (poll_count < 0) {
             std::cerr << "Poll failed: " << strerror(errno) << std::endl;
+            continue;
+        }
+        
+        if (poll_count == 0) {
+            // Timeout occurred, continue to check expired connections
             continue;
         }
         
@@ -326,6 +485,9 @@ void Server::startServer() {
                         closeClientConnection(idx);
                         continue;
                     }
+                    
+                    // Update last activity timestamp for keep-alive timeout
+                    clients[client_index].updateLastActivity();
                     
                     // Process client request
                     char buffer[16384] = {0};
@@ -392,7 +554,7 @@ void Server::startServer() {
         }
     }
 }
-
+//************************************************ */
 void Server::handleClientWrite(size_t index) {
     if (index >= pollfds.size()) {
         std::cerr << "Invalid pollfd index in handleClientWrite" << std::endl;
@@ -518,4 +680,22 @@ ServerBlock Server::get_ServerConfByIndex(int fd_server) {
     }
     // Return a default ServerBlock if not found
     return ServerBlock();
+}
+
+void Server::checkExpiredConnections() {
+    // Iterate backwards to safely remove expired connections
+    std::cout << "\033[33mChecking for expired connections...\033[0m" << std::endl;
+    for (int i = static_cast<int>(clients.size()) - 1; i >= 0; i--) {
+        if (clients[i].isExpired()) {
+            int client_fd = clients[i].get_client_id();
+            for (size_t j = 0; j < pollfds.size(); j++) {
+                if (pollfds[j].fd == client_fd) {
+                    std::cout << "\033[33mClosing expired keep-alive connection. Socket FD: " 
+                              << client_fd << "\033[0m" << std::endl;
+                    closeClientConnection(j);
+                    break;
+                }
+            }
+        }
+    }
 }

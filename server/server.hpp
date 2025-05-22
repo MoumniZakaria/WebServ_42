@@ -41,6 +41,8 @@ public:
     // All server blocks from configuration file
     std::vector<ServerBlock> server_block_obj;
     size_t number_of_servers;
+
+    void checkExpiredConnections();
     
     // Constructors/Destructors
     Server();

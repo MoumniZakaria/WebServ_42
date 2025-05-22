@@ -3,143 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webserv Tester</title>
+    <title>Video Stress Test</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        input, textarea, button { margin: 5px 0; width: 100%; padding: 8px; }
-        .response { background: #f5f5f5; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        body {background: #477d70; font-family: Arial, sans-serif; margin: 20px; }
+        .controls { margin-bottom: 20px; padding: 15px; background: #f5f5f5; }
+        input { padding: 8px; width: 300px; margin-right: 10px; }
+        button { padding: 8px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        video { width: 100%; background: #000; }
+        .status { margin-top: 20px; padding: 10px; background: #f0f0f0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Webserv Tester</h1>
+        <h1>Video Stress Test</h1>
         
-        <!-- URL Input -->
-        <div class="section">
-            <h2>Target URL</h2>
-            <input type="text" id="url" value="http://localhost:8080/" placeholder="Enter URL (e.g., http://localhost:8080/cgi/test.py)">
+        <div class="controls">
+            <input type="text" id="videoUrl" value="/videos/test.mp4" placeholder="Video URL">
+            <input type="number" id="count" value="10" min="1" max="50">
+            <button onclick="loadVideos()">Load Videos</button>
+            <button onclick="stopAll()">Stop All</button>
         </div>
-
-        <!-- GET Request -->
-        <div class="section">
-            <h2>GET Request</h2>
-            <button onclick="sendRequest('GET')">Send GET</button>
+        
+        <div class="status">
+            <strong>Status:</strong> <span id="status">Ready</span>
+            <div id="stats"></div>
         </div>
-
-        <!-- POST Request -->
-        <div class="section">
-            <h2>POST Request</h2>
-            <textarea id="postData" placeholder='{"key": "value"} or form data'></textarea>
-            <button onclick="sendRequest('POST')">Send POST</button>
-        </div>
-
-        <!-- Cookies -->
-        <div class="section">
-            <h2>Cookies</h2>
-            <input type="text" id="cookieName" placeholder="Cookie Name">
-            <input type="text" id="cookieValue" placeholder="Cookie Value">
-            <button onclick="setCookie()">Set Cookie</button>
-            <button onclick="listCookies()">List Cookies</button>
-            <div id="cookies" class="response"></div>
-        </div>
-
-        <!-- File Upload (CGI Test) -->
-        <div class="section">
-            <h2>File Upload (CGI Test)</h2>
-            <input type="file" id="fileUpload">
-            <button onclick="uploadFile()">Upload File</button>
-        </div>
-
-        <!-- Response -->
-        <div class="section">
-            <h2>Response</h2>
-            <div id="response" class="response">Waiting for request...</div>
-        </div>
+        
+        <div class="video-grid" id="videoContainer"></div>
     </div>
 
     <script>
-        const urlInput = document.getElementById('url');
-        const postData = document.getElementById('postData');
-        const cookieName = document.getElementById('cookieName');
-        const cookieValue = document.getElementById('cookieValue');
-        const cookiesDiv = document.getElementById('cookies');
-        const responseDiv = document.getElementById('response');
-        const fileUpload = document.getElementById('fileUpload');
+        let activeVideos = [];
+        let startTime;
+        let loadedCount = 0;
+        const totalCount = () => parseInt(document.getElementById('count').value);
 
-        // Send GET/POST request
-        async function sendRequest(method) {
-            const url = urlInput.value;
-            const options = {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include' // Include cookies
-            };
-
-            if (method === 'POST' && postData.value) {
-                options.body = postData.value;
+        function loadVideos() {
+            // Clear previous
+            document.getElementById('videoContainer').innerHTML = '';
+            activeVideos = [];
+            loadedCount = 0;
+            
+            // Get config
+            const videoUrl = document.getElementById('videoUrl').value;
+            const count = totalCount();
+            
+            if (!videoUrl) {
+                document.getElementById('status').textContent = "Enter video URL!";
+                return;
             }
 
-            try {
-                const response = await fetch(url, options);
-                const text = await response.text();
-                responseDiv.innerHTML = `<strong>Status:</strong> ${response.status}\n\n<strong>Headers:</strong>\n${formatHeaders(response.headers)}\n\n<strong>Body:</strong>\n${escapeHtml(text)}`;
-            } catch (error) {
-                responseDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+            document.getElementById('status').textContent = `Loading ${count} instances...`;
+            startTime = performance.now();
+            
+            // Load same video multiple times
+            for (let i = 0; i < count; i++) {
+                createVideoElement(videoUrl, i);
             }
         }
 
-        // Set a cookie
-        function setCookie() {
-            const name = cookieName.value;
-            const value = cookieValue.value;
-            if (!name || !value) return;
-            document.cookie = `${name}=${value}; path=/`;
-            listCookies();
-        }
-
-        // List all cookies
-        function listCookies() {
-            cookiesDiv.innerHTML = document.cookie || 'No cookies set.';
-        }
-
-        // Upload file (CGI test)
-        async function uploadFile() {
-            const url = urlInput.value;
-            const file = fileUpload.files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
+        function createVideoElement(url, index) {
+            const container = document.createElement('div');
+            const video = document.createElement('video');
+            video.controls = true;
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = true; // Required for autoplay in most browsers
+            
+            const info = document.createElement('div');
+            info.className = 'video-info';
+            info.textContent = `Instance ${index+1}`;
+            
+            container.appendChild(video);
+            container.appendChild(info);
+            document.getElementById('videoContainer').appendChild(container);
+            
+            // Start loading
+            video.src = url;
+            activeVideos[index] = video;
+            
+            video.oncanplay = function() {
+                loadedCount++;
+                updateStats();
+                video.play().catch(e => {
+                    info.textContent += ` (autoplay blocked)`;
                 });
-                const text = await response.text();
-                responseDiv.innerHTML = `<strong>Status:</strong> ${response.status}\n\n<strong>Body:</strong>\n${escapeHtml(text)}`;
-            } catch (error) {
-                responseDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
-            }
+            };
+            
+            video.onerror = function() {
+                info.textContent += ` - Failed to load`;
+            };
         }
 
-        // Helper: Format headers for display
-        function formatHeaders(headers) {
-            let result = '';
-            headers.forEach((value, key) => {
-                result += `${key}: ${value}\n`;
+        function stopAll() {
+            activeVideos.forEach(video => {
+                if (video) {
+                    video.pause();
+                    video.removeAttribute('src');
+                    video.load();
+                }
             });
-            return result;
+            document.getElementById('status').textContent = `Stopped (${loadedCount}/${totalCount()} loaded)`;
         }
 
-        // Helper: Escape HTML to prevent XSS
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;")
-                      .replace(/</g, "&lt;")
-                      .replace(/>/g, "&gt;");
+        function updateStats() {
+            const elapsed = ((performance.now() - startTime)/1000).toFixed(2);
+            document.getElementById('stats').innerHTML = `
+                Loaded: ${loadedCount}/${totalCount()} | Time: ${elapsed}s | Rate: ${(loadedCount/elapsed).toFixed(2)} videos/s
+            `;
+            
+            if (loadedCount === totalCount()) {
+                document.getElementById('status').textContent = "All instances loaded!";
+            }
         }
     </script>
 </body>
