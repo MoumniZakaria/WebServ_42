@@ -3,118 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Stress Test</title>
+    <title>Webserv File Upload Test</title>
     <style>
-        body {background: #477d70; font-family: Arial, sans-serif; margin: 20px; }
-        .controls { margin-bottom: 20px; padding: 15px; background: #f5f5f5; }
-        input { padding: 8px; width: 300px; margin-right: 10px; }
-        button { padding: 8px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        video { width: 100%; background: #000; }
-        .status { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #response { margin-top: 20px; padding: 10px; border: 1px solid #ddd; background: #f5f5f5; white-space: pre-wrap; }
+        #progress { margin-top: 10px; height: 20px; background: #eee; }
+        #progress-bar { height: 100%; background: #4CAF50; width: 0%; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Video Stress Test</h1>
-        
-        <div class="controls">
-            <input type="text" id="videoUrl" value="/videos/test.mp4" placeholder="Video URL">
-            <input type="number" id="count" value="10" min="1" max="50">
-            <button onclick="loadVideos()">Load Videos</button>
-            <button onclick="stopAll()">Stop All</button>
-        </div>
-        
-        <div class="status">
-            <strong>Status:</strong> <span id="status">Ready</span>
-            <div id="stats"></div>
-        </div>
-        
-        <div class="video-grid" id="videoContainer"></div>
+    <h1>Webserv File Upload Test (POST)</h1>
+    
+    <!-- Server URL Input -->
+    <div>
+        <label for="url">Upload URL:</label><br>
+        <input type="text" id="url" value="http://localhost:8080/upload" style="width: 300px;">
     </div>
 
-    <script>
-        let activeVideos = [];
-        let startTime;
-        let loadedCount = 0;
-        const totalCount = () => parseInt(document.getElementById('count').value);
+    <!-- File Input -->
+    <div>
+        <label for="file">Select file(s):</label><br>
+        <input type="file" id="file" multiple>
+    </div>
 
-        function loadVideos() {
-            // Clear previous
-            document.getElementById('videoContainer').innerHTML = '';
-            activeVideos = [];
-            loadedCount = 0;
-            
-            // Get config
-            const videoUrl = document.getElementById('videoUrl').value;
-            const count = totalCount();
-            
-            if (!videoUrl) {
-                document.getElementById('status').textContent = "Enter video URL!";
+    <!-- Upload Button -->
+    <div>
+        <button onclick="uploadFile()">Upload</button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="progress">
+        <div id="progress-bar"></div>
+    </div>
+
+    <!-- Response Output -->
+    <div id="response">Server response will appear here.</div>
+
+    <script>
+        async function uploadFile() {
+            const url = document.getElementById('url').value;
+            const fileInput = document.getElementById('file');
+            const responseDiv = document.getElementById('response');
+            const progressBar = document.getElementById('progress-bar');
+
+            if (!fileInput.files.length) {
+                responseDiv.textContent = "No files selected!";
                 return;
             }
 
-            document.getElementById('status').textContent = `Loading ${count} instances...`;
-            startTime = performance.now();
-            
-            // Load same video multiple times
-            for (let i = 0; i < count; i++) {
-                createVideoElement(videoUrl, i);
+            const formData = new FormData();
+            for (const file of fileInput.files) {
+                formData.append('file', file);  // Field name 'file' (adjust to match your server)
             }
-        }
 
-        function createVideoElement(url, index) {
-            const container = document.createElement('div');
-            const video = document.createElement('video');
-            video.controls = true;
-            video.autoplay = true;
-            video.loop = true;
-            video.muted = true; // Required for autoplay in most browsers
-            
-            const info = document.createElement('div');
-            info.className = 'video-info';
-            info.textContent = `Instance ${index+1}`;
-            
-            container.appendChild(video);
-            container.appendChild(info);
-            document.getElementById('videoContainer').appendChild(container);
-            
-            // Start loading
-            video.src = url;
-            activeVideos[index] = video;
-            
-            video.oncanplay = function() {
-                loadedCount++;
-                updateStats();
-                video.play().catch(e => {
-                    info.textContent += ` (autoplay blocked)`;
-                });
-            };
-            
-            video.onerror = function() {
-                info.textContent += ` - Failed to load`;
-            };
-        }
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                // Progress tracking
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        progressBar.style.width = `${percent}%`;
+                    }
+                };
 
-        function stopAll() {
-            activeVideos.forEach(video => {
-                if (video) {
-                    video.pause();
-                    video.removeAttribute('src');
-                    video.load();
-                }
-            });
-            document.getElementById('status').textContent = `Stopped (${loadedCount}/${totalCount()} loaded)`;
-        }
+                xhr.onload = () => {
+                    responseDiv.textContent = `HTTP ${xhr.status}\n\n${xhr.responseText}`;
+                };
 
-        function updateStats() {
-            const elapsed = ((performance.now() - startTime)/1000).toFixed(2);
-            document.getElementById('stats').innerHTML = `
-                Loaded: ${loadedCount}/${totalCount()} | Time: ${elapsed}s | Rate: ${(loadedCount/elapsed).toFixed(2)} videos/s
-            `;
-            
-            if (loadedCount === totalCount()) {
-                document.getElementById('status').textContent = "All instances loaded!";
+                xhr.onerror = () => {
+                    responseDiv.textContent = `Upload failed: ${xhr.statusText}`;
+                };
+
+                xhr.open('POST', url, true);
+                xhr.send(formData);
+
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
             }
         }
     </script>

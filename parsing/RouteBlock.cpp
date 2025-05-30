@@ -14,35 +14,27 @@
 
 RouteBlock::RouteBlock()
 {
-    root = "/html";
+    root = "./html";
     methods.push_back("GET");
     methods.push_back("POST");
     methods.push_back("DELETE");
     autoindex = false;
-    client_body_temp_path = "/";
-    // std::cout << "RouteBlock Default constructor " << std::endl;
+    client_body_temp_path = "./upload";
 }
-RouteBlock::~RouteBlock()
-{
-    // std::cout << "RouteBlock Destructor " << std::endl;
-}
+
 
 RouteBlock::RouteBlock(const RouteBlock& other)
 {
     *this = other;
-    // std::cout << "RouteBlock Copy Constructor " << std::endl;
-
 }
 
 RouteBlock& RouteBlock::operator=(const RouteBlock& other)
 {
-    // std::cout << "RouteBlock Copy assignment operator " << std::endl;
     if (this != &other)
     {
         this->URI = other.URI;
         this->root= other.root;
-        this->methods.clear();
-        this->methods = other.methods;//maybe it's a shallow copy
+        this->methods = other.methods;
         this->autoindex = other.autoindex;
         this->index = other.index;
         this->cgi_extension = other.cgi_extension;

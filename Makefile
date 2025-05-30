@@ -12,21 +12,22 @@ SRC = request/request.cpp \
 	  parsing/pars_route.cpp\
 	  parsing/check_tools.cpp\
 	  main.cpp \
-	  cgi.cpp
+	  cgi.cpp \
+	  request/post_request.cpp
 
 
 OBJ = $(SRC:.cpp=.o)
 NAME = webserv
-HEDER = request/request.hpp parsing/Confile.hpp  parsing/ServerBlock.hpp parsing/RouteBlock.hpp
-CFLAGS =  -Wall -Wextra -Werror -std=c++98 #-g -fsanitize=address
+HEDER = request/request.hpp parsing/Confile.hpp  parsing/ServerBlock.hpp parsing/RouteBlock.hpp webserver.hpp  client/client.hpp response/response.hpp server/server.hpp
+CFLAGS =  -Wall -Wextra -Werror -std=c++98
 
 all : $(NAME)
 
 %.o : %.cpp ${HEDER} Makefile
-	g++ ${CFLAGS} -c $< -o $@ && rm -rf html && mkdir html
+	c++ ${CFLAGS} -c $< -o $@ && rm -rf html && mkdir html
 
 $(NAME) : $(OBJ) ${HEDER}
-	 g++ ${CFLAGS} $(OBJ) -o $@
+	c++ ${CFLAGS} $(OBJ) -o $@
 
 clean :
 	rm -rf $(OBJ)

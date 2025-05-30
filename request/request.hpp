@@ -16,6 +16,11 @@ class Request
     public:
         std::ofstream file;
 
+        int redirection;
+        std::string Location;
+        // int is_error;
+
+
         bool is_string_req_send;
         const std::string& get_method();
         const std::string& get_version();
@@ -32,14 +37,17 @@ class Request
         bool fill_headers_map(std::istringstream &obj , std::string &res , Client &client);
 
 
-        void print_headers(){
-            std::map<std::string , std::string >::iterator it = headers_map.begin();
-            while(it != headers_map.end()){
-                std::cout << it->first << " ---------------> " << it->second << std::endl;
-                ++it;
-            }
-        }
+        // void print_headers(){
+        //     std::map<std::string , std::string >::iterator it = headers_map.begin();
+        //     while(it != headers_map.end()){
+        //         std::cout << it->first << " ---------------> " << it->second << std::endl;
+        //         ++it;
+        //     }
+        // }
 
+        std::map<std::string,std::string> get_headers_map(){
+            return headers_map;
+        }
 
         bool get_parse_index();
         void set_parse_index(bool index);

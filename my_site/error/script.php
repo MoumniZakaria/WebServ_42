@@ -1,27 +1,23 @@
-import sys
-import secrets
-
-
-
-html_content = f"""\
+<?php
+$html_content = <<<HTML
 <html>
 <head>
     <style>
-        body {{
+        body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f9;
             color: #333;
             text-align: center;
             margin: 10%;
-        }}
-        h1 {{
+        }
+        h1 {
             color: #4CAF50;
             font-size: 36px;
-        }}
-        p {{
+        }
+        p {
             font-size: 18px;
             margin: 10px 0;
-        }}
+        }
     </style>
 </head>
 <body>
@@ -30,12 +26,13 @@ html_content = f"""\
     <p>Your credentials are correct, and a cookie has been set.</p>
 </body>
 </html>
-"""
+HTML;
 
-print("HTTP/1.1 200 OK")
-print("Content-Type: text/html")
-print(f"Content-Length: {len(html_content.encode('utf-8'))}")
-print()  
+header("HTTP/1.1 200 OK");
+header("Content-Type: text/html");
+header("Content-Length: " . strlen($html_content));
 
 
-print(html_content)
+echo $html_content;
+?>
+

@@ -25,7 +25,6 @@ class RouteBlock{
         std::map <int, std::string> redirections;
     public:
         RouteBlock();
-        ~RouteBlock();
         RouteBlock(const RouteBlock& other);
         RouteBlock& operator=(const RouteBlock& other);
         void set_URI(std::string set_uri);

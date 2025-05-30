@@ -44,29 +44,21 @@ int set_default_page()
 
 Confile::Confile()
 {
-    // std::cout << "Confile Default constructor called" << std::endl;
     status = true;
     number_of_server = 0; 
 }
-Confile::~Confile()
-{
-    // std::cout << "Confile Destructor called" << std::endl;
-}
+
 
 Confile::Confile(const Confile& other)
 {
     *this = other;
-    // std::cout << "Confile Copy Constructor called" << std::endl;
-
 }
 
 Confile& Confile::operator=(const Confile& other)
 {
-    // std::cout << "Confile Copy assignment operator called" << std::endl;
     if (this != &other)
     {
-        this->servers.clear();
-        this->servers = other.servers; //maybe this is a shallow copy and we need to apply a deep copy 
+        this->servers = other.servers;
     }   
     this->status = other.status;
     this->number_of_server = other.number_of_server;
@@ -100,7 +92,7 @@ ServerBlock Confile::pars_server(std::vector<std::string>& lines, size_t& i)
     size_t hold = i;
     if (check_line(lines, i))
     {
-        status = false; //status is public memeber in confileclass
+        status = false;
         return (server);
     }
     i = hold;
@@ -108,7 +100,6 @@ ServerBlock Confile::pars_server(std::vector<std::string>& lines, size_t& i)
     if (status == false)
         return (server);
     status = check_status(server);
-    // status = check_index(server.get_index(), server.get_server_root());
     return server;
 }
 
@@ -122,42 +113,24 @@ void Confile::set_server(std::vector<std::string> parts)
     }
     while( i < parts.size())
     {
-         std::vector<std::string> words = get_words(parts[i]);
+        std::vector<std::string> words = get_words(parts[i]);
         if (words.empty())
-        {
-            std::cerr << "end of confile"<< std::endl;
             break;
-        }
         ServerBlock tmp_server = pars_server(parts, i);
         if (status == true)
         {
-            // if (check_dup_serv(servers, tmp_server) || tmp_server.dupindex > 0)
-            // {
-            //     status = false;
-            //     std::cerr << "Error duplicated infos invalid config file" << std::endl;//check resources
-            //     return ;
-            // }
             servers.push_back(tmp_server);
             number_of_server++;
         }
         else
         {
-            std::cerr << "Error Invalid config file" << std::endl;//check resources
+            std::cerr << "Error Invalid config file" << std::endl;
             return ;
         }
-    }
-    if (status == true)
-        std::cout << "confile created successfully" << std::endl;
-    std::cout << "number of server is " << number_of_server << std::endl;
-
+    } 
 }
 
 std::vector <ServerBlock>& Confile::get_server()
 {
     return servers;
 }
-
-// void Confile::set_default_server(std::vector <ServerBlock> default_servers)
-// {
-//     servers = default_servers;
-// }

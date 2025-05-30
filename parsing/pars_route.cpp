@@ -6,7 +6,7 @@
 /*   By: kid-ouis <kid-ouis@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/05 12:01:28 by kid-ouis          #+#    #+#             */
-/*   Updated: 2025/05/13 14:35:12 by kid-ouis         ###   ########.fr       */
+/*   Updated: 2025/05/29 17:47:58 by kid-ouis         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,28 +20,31 @@ int check_first_line(RouteBlock& route, std::vector <std::string>& lines, size_t
 	std::string URI;
 	std::vector <std::string> words = get_words(lines[i]);
 	if (words[0] != "location" && words[0] != "location{")
-		return (std::cout << "end of locationblock" << std::endl, 1);
+		return (1);//end of locationblock
 	if (words.size() < 4)
 			return (status = false, std::cout << "invalid location structre" << std::endl, 1);
+	URI = words[1];
 	last_char = words[1].length() - 1;
 	if (words[1][last_char] == '{')
 	{
 		URI = words[1].substr(0, last_char);
-		if (URI.find('{') != std::string::npos || URI.find('}') != std::string::npos)
-			return (status = false, std::cout << "Error unwanted braces 111" << std::endl, 1);
-		route.set_URI(URI);
 		s = 2;
 	}
 	else if (words[2] != "{")
-			return (status = false, std::cout << "invalid location structre" << std::endl, 1);
-		std::string rest;
+		return (status = false, std::cout << "invalid location structre" << std::endl, 1);
+	if (URI.find('{') != std::string::npos || URI.find('}') != std::string::npos)
+		return (status = false, std::cout << "Error unwanted braces" << std::endl, 1);
+	if (URI[0] != '/')
+		return (status = false, std::cout << "Error invalid uri" << std::endl, 1);	
+	route.set_URI(URI);
+
+	std::string rest;
 	while (s < words.size())
 	{
 		rest += " ";
 		rest += words[s];
 		s++;
 	}
-	// std::cout << "rest" << rest << std::endl;
 	lines[i] = rest;
 	return 0;
 	
@@ -67,6 +70,8 @@ std::vector  <std::string> pars_methods(std::vector <std::string> words, bool& c
 	{
 		if (!isinvec(methods, words[i]))
 		{
+			if (words[i].find('{') != std::string::npos || words[i].find('}') != std::string::npos)
+				return (check = false, std::cout << "Error unwanted braces" << std::endl, methods);
 			if (words[i] != "GET" && words[i] != "POST" && words[i] != "DELETE")
 				return (check = false, std::cout << "ERROR unwanted method" << std::endl, methods);
 			methods.push_back(words[i]);
@@ -100,7 +105,7 @@ std::vector <std::string> pars_cgi_ext(std::vector <std::string> words, bool& ch
 		if (words[i][0] != '.')
 			return (check = false , std::cout << "Error Invalid extension" << std::endl, extension);
 		if (words[i].find('{') != std::string::npos || words[i].find('}') != std::string::npos)
-			return (check = false, std::cout << "Error unwanted braces 2222" << std::endl, extension);
+			return (check = false, std::cout << "Error unwanted brace" << std::endl, extension);
 		extension.push_back(words[i]);
 		i++;
 	}
@@ -122,7 +127,6 @@ std::string pars_temp_path(std::vector <std::string> words,bool& check)
 	if (check_type(words[1]) != 0)
 		return (check  = false , std::cout << "Error client_body_temp_path not directory" << std::endl, tmp_path);
 	tmp_path = words[1];
-		// std::cout << "#==> temp_path get parsed" << std::endl;
 	return (tmp_path);
 }
 
@@ -132,25 +136,27 @@ std::map <int, std::string> get_redirection(std::vector<std::string> words, bool
     size_t j = 0;
     int code;
     std::map <int, std::string> redirection;
-    if(words.size() < 3)
-        return (status = false, std::cout << "Error invalid return redirection directive" << std::endl, redirection);
-    size_t last = words.size() - 1;
-    while (i < last)
+    if(words.size() != 3)
+	{
+        return (status = false, std::cout << "Error invalid number of arguments in return directive" << std::endl, redirection);
+	}
+	if (words[2].find('{') != std::string::npos || words[2].find('}') != std::string::npos)
+		return (status = false, std::cout << "Error unwanted braces" << std::endl, redirection);
+    while(j < words[i].size())
     {
-        j = 0;
-        while(j < words[i].size())
-        {
-            if (!isdigit(words[i][j]))
-                return (status = false, std:: cout << "Error invalid redirection's status code" << std::endl , redirection);
-            j++;
-        }
-        std::stringstream ss(words[i]);
-        ss >> code;
-        if (code != 301 && code != 302 && code != 303 && code != 307 && code != 308)
-            return (status = false, std:: cout << "Error invalid code" << std::endl , redirection);
-        redirection[code] = words[last];
-        i++;
+        if (!isdigit(words[i][j]))
+		{
+			
+            return (status = false, std:: cout << "Error invalid redirection's status code : " << i << std::endl , redirection);
+		}
+        j++;
     }
+    std::stringstream ss(words[i]);
+    ss >> code;
+    if (code != 301 && code != 302 && code != 303 && code != 307 && code != 308)
+        return (status = false, std:: cout << "Error invalid code" << std::endl , redirection);
+    redirection[code] = words[2];
+    i++;
     return redirection;
 }
 
@@ -158,7 +164,6 @@ std::map <int, std::string> get_redirection(std::vector<std::string> words, bool
 bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 {
 	bool status = true;
-	
 	std::vector<std::string> words = get_words(lines[i]);
 	while (i < lines.size())
 	{
@@ -166,8 +171,8 @@ bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 			return false;
 		if (words[0] == "}" || words[0][0] == '}')
 		{
-			if (words[0] == "}" && words.size() == 1) //case of  we have just }
-				return (std::cout << "end of RouteBlock and  unexpected ';' after brace" << std::endl, false);//false cause even if the routeblock filled if there is char after brace it's error
+			if (words[0] == "}" && words.size() == 1)
+				return (std::cerr << "Error unexpected ';' after routeblock brace" << std::endl, false);
 			if (words[0].length() > 1) // case of have }location or  }}
 				words[0] = words[0].substr(1);
 			else if (words[0] == "}" && words.size() > 1) //case of having } location
@@ -181,7 +186,7 @@ bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 				s++;
 			}
 			lines[i] = rest;
-			return (std::cout << "end of RouteBlock" << std::endl, status);				
+			return (status);
 		}
 		else if (words[0] == "allowed_methods")
 			route.set_methods(pars_methods(words, status));
@@ -196,17 +201,13 @@ bool fill_route(RouteBlock& route, std::vector <std::string>& lines,  size_t& i)
 		else if (words[0] == "root")
 			route.set_root(get_root(words, status));
 		else if (words[0] == "return")
-		{
             route.set_redirections(get_redirection(words, status));
-		}
 		else
 		{
 			std::cout << "word: " << words[0] << " invalid element in routeblock" << std::endl;
 			return false;
 		}
-			
 		i++;
-		words.clear();
 		words = get_words(lines[i]);
 	}
 	return status;
@@ -255,13 +256,10 @@ std::vector <RouteBlock> pars_routes(std::vector <std::string>& lines, size_t& i
 		}
 		std::vector <std::string> words = get_words(lines[i]);
 		hold  = i;
-		i = hold;//back to first line in routeblock after getting root;
+		i = hold;
 		status = fill_route(route, lines , i);
 		if (!status)
 			return (status = false, std::cout << "not valid routeblock"  << std::endl, vec_routes);
-		// status = check_index(route.get_index(), route.get_root());
-		// if (!status)
-		// 	return (status = false, std::cout << "not valid routeblock"  << std::endl, vec_routes);
 		vec_routes.push_back(route);
 	}
 	 return vec_routes;

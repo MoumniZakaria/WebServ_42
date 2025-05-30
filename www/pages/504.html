@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTTP 201 Animation</title>
+    <title>HTTP 504 Error</title>
     <style>
         body {
             display: flex;
@@ -25,7 +25,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background: #28a745;
+            background: #dc3545;
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -33,7 +33,7 @@
             align-items: center;
             color: white;
             animation: pulse 2s infinite;
-            box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.4);
         }
 
         .status-code {
@@ -46,35 +46,19 @@
 
         .status-message {
             font-size: 1.2rem;
+            text-align: center;
             opacity: 0;
             animation: fadeInUp 0.5s 0.5s forwards;
         }
 
-        .checkmark {
+        .warning-icon {
             width: 50px;
             height: 50px;
             position: absolute;
             top: -25px;
             right: -25px;
             opacity: 0;
-            animation: checkmarkPop 0.5s 1s forwards;
-        }
-
-        .checkmark__circle {
-            stroke-dasharray: 166;
-            stroke-dashoffset: 166;
-            stroke-width: 2;
-            stroke-miterlimit: 10;
-            stroke: #28a745;
-            fill: none;
-            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-        }
-
-        .checkmark__check {
-            transform-origin: 50% 50%;
-            stroke-dasharray: 48;
-            stroke-dashoffset: 48;
-            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+            animation: warningPop 0.5s 1s forwards;
         }
 
         @keyframes pulse {
@@ -94,16 +78,10 @@
             }
         }
 
-        @keyframes checkmarkPop {
+        @keyframes warningPop {
             0% { opacity: 0; transform: scale(0); }
             80% { opacity: 1; transform: scale(1.1); }
             100% { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes stroke {
-            100% {
-                stroke-dashoffset: 0;
-            }
         }
 
         /* Data transfer animation */
@@ -116,9 +94,9 @@
 
         .data-line {
             position: absolute;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
             height: 2px;
-            animation: dataTransfer 1s linear infinite;
+            animation: dataTransfer 1.2s linear infinite;
         }
 
         @keyframes dataTransfer {
@@ -132,21 +110,22 @@
     <div class="http-container">
         <!-- Animated data transfer lines -->
         <div class="data-lines">
-            <div class="data-line" style="top: 20%; animation-delay: 0.1s"></div>
-            <div class="data-line" style="top: 40%; animation-delay: 0.3s"></div>
-            <div class="data-line" style="top: 60%; animation-delay: 0.5s"></div>
+            <div class="data-line" style="top: 25%; animation-delay: 0.2s"></div>
+            <div class="data-line" style="top: 50%; animation-delay: 0.4s"></div>
+            <div class="data-line" style="top: 75%; animation-delay: 0.6s"></div>
         </div>
 
         <!-- Status box -->
         <div class="status-box">
-            <div class="status-code">201</div>
-            <div class="status-message">OK - File uploaded Successful</div>
+            <div class="status-code">504</div>
+            <div class="status-message">Gateway Timeout<br>Server did not respond in time</div>
         </div>
 
-        <!-- Checkmark -->
-        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-            <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-            <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        <!-- Warning icon -->
+        <svg class="warning-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="25" fill="none" stroke="#dc3545" stroke-width="2"/>
+            <line x1="26" y1="15" x2="26" y2="30" stroke="#dc3545" stroke-width="4"/>
+            <circle cx="26" cy="37" r="2.5" fill="#dc3545"/>
         </svg>
     </div>
 </body>

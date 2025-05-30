@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTTP 201 Animation</title>
+    <title>HTTP 505 - Version Not Supported</title>
     <style>
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: #1a1a1a;
+            background: #dc3545;
             margin: 0;
             font-family: Arial, sans-serif;
         }
@@ -25,7 +25,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background: #28a745;
+            background: #dc3545;
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -33,7 +33,7 @@
             align-items: center;
             color: white;
             animation: pulse 2s infinite;
-            box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.3);
         }
 
         .status-code {
@@ -65,7 +65,7 @@
             stroke-dashoffset: 166;
             stroke-width: 2;
             stroke-miterlimit: 10;
-            stroke: #28a745;
+            stroke: #dc3545;
             fill: none;
             animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
         }
@@ -139,8 +139,8 @@
 
         <!-- Status box -->
         <div class="status-box">
-            <div class="status-code">201</div>
-            <div class="status-message">OK - File uploaded Successful</div>
+            <div class="status-code">505</div>
+            <div class="status-message">Version Not Supported</div>
         </div>
 
         <!-- Checkmark -->

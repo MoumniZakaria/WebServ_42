@@ -2,6 +2,7 @@
 
 Request::Request()
 {
+    redirection = -1;
     index = false;
     is_string_req_send = false;
 }
@@ -142,7 +143,14 @@ bool Request::fill_headers_map(std::istringstream &ob, std::string &res, Client 
         trim(value);
         if (key == "Connection" && value == "close")
             client.set_Alive(false);
+        // else
+        //     client.set_Alive(true);
         headers_map[key] = value;
+    }
+    if (headers_map.size() == 0){
+        set_response_error(&client , 400);
+        headers_map.clear();
+        return false;
     }
     return true;
 }
@@ -165,7 +173,9 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
     int entry = 0;
     int sorty = 0;
     (void)res;
+
     std::string error_path;
+
     for (int i = 0; str[i]; i++)
     {
         if (strcmp(str[i], "..") == 0)
@@ -178,6 +188,7 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
             return false;
         }
     }
+
     std::vector<std::string> vec;
 
     for (int i = 0; str[i]; i++)
@@ -190,6 +201,7 @@ bool out_root_dir(std::string &pa, std::string &res, Client &client)
         }
     }
     pa = "/";
+
     std::ostringstream oss;
     for (size_t i = 0; i < vec.size(); ++i)
     {
@@ -226,6 +238,7 @@ void hanlde_post_request(Client &client)
     static int first;
     static size_t writed;
 
+
     if (!first)
     {
         first = 10;
@@ -233,22 +246,38 @@ void hanlde_post_request(Client &client)
         size_t pos = content_type.find("/");
         std::string extension = content_type.substr(pos + 1);
         trim_non_printable(extension);
+        
 
-        std::string file_name = client.server_client_obj.get_server_root() + "/" + ft_generate_file_names(client, extension);
+        
+        std::string dirname =   get_file_name(&client);
+        std::string file_name = ft_generate_file_names(extension , dirname);
+
+
+
+        if (dirname.empty()){
+            first = writed = 0;
+            client.set_all_recv(true);
+            return ;
+        }
 
         client.get_request().file.open(file_name.c_str());
+
+        
         if (!client.get_request().file.is_open())
         {
+            
             std::cerr << "Error: Could not open file " << file_name << std::endl;
             return;
         }
         client.get_request().file << client.get_request().get_s_request() << std::flush;
+        
         if (client.get_request().file.fail())
         {
             std::cerr << "Error: Failed to write to file " << file_name << std::endl;
             client.get_request().file.close();
             return;
         }
+        
         writed += client.get_request().get_s_request().size();
         if (writed >= client.get_request().get_content_length())
         {
@@ -261,7 +290,7 @@ void hanlde_post_request(Client &client)
         if (!client.get_request().file.is_open())
         {
             std::cerr << "Error: File is not open" << std::endl;
-            // exit(0);
+            set_response_error(&client , 500);
             return;
         }
         client.get_request().file << client.get_request().get_s_request() << std::flush;
@@ -276,6 +305,25 @@ void hanlde_post_request(Client &client)
         {
             client.set_all_recv(true);
             first = writed = 0;
+        }
+    }
+}
+
+
+
+
+void check_if_have_redirection(Client *client){
+    if (client->server_client_obj.is_location_url != -1){
+        std::map<int, std::string> map =  client->server_client_obj.get_routes()[client->server_client_obj.is_location_url].get_redirections();
+
+        std::map<int, std::string>::iterator it = map.begin();
+        while(it != map.end()){
+            std::string new_url = it->second;
+            client->get_request().redirection = it->first;
+            client->get_request().Location = it->second;
+            set_response_error(client ,it->first);
+            ++it;
+
         }
     }
 }

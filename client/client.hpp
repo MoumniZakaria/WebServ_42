@@ -13,7 +13,6 @@ class Client{
         std::map<std::string , std::string> form_data;
         bool keep_alive;
         bool all_recv;
-        time_t last_activity;
         
     public:
         ServerBlock server_client_obj;
@@ -30,9 +29,6 @@ class Client{
         void set_all_recv(bool check);
         bool get_all_recv();
 
-        void updateLastActivity();
-        bool isExpired() const;
-
 
 
         Client(int fd, struct sockaddr_in Add, ServerBlock obj);
@@ -40,7 +36,7 @@ class Client{
         void fill_map(std::string key , std::string value);
         void print_map();
         Client();
-        ~Client(){};
         void reset();
+        ~Client();
 
 };

@@ -1,2 +1,0 @@
-leak of fd when dirctories
-505 when ( curl -X GET "http://localhost:3331" --http1.0 -H "Host:" -H " " )

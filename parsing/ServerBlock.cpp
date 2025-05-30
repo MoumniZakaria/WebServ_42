@@ -16,40 +16,29 @@
 ServerBlock::ServerBlock()
 {
     is_location_url = -1;
-    // dupindex = 0;
-    // Port = -1;
     client_body_size = 1048576;
-    server_root = "/html";
-    // std::cout << "ServerBlock Default constructor called" << std::endl;
+    server_root = "./html";
+
 }
-ServerBlock::~ServerBlock()
-{
-    // std::cout << "ServerBlock Destructor called" << std::endl;
-}
+
 
 ServerBlock::ServerBlock(const ServerBlock& other)
 {
-    *this = other;
-    // std::cout << "ServerBlock Copy Constructor called" << std::endl;
-    
+    *this = other; 
 }
 
 ServerBlock& ServerBlock::operator=(const ServerBlock& other)
 {
-    // std::cout << "ServerBlock Copy assignment operator called" << std::endl;
     if (this != &other)
     {
         this->Host = other.Host;
         this->Port = other.Port;
-        this->Server_names.clear();//maybe it's a shallow
         this->Server_names = other.Server_names;
         this->server_root = other.server_root;
         this->client_body_size = other.client_body_size;
         this->index = other.index;
-        this->routes.clear();
         this->routes = other.routes;
         this->error_pages = other.error_pages;
-        this->dupindex = other.dupindex;
     }
     return *this;
 }
@@ -67,9 +56,6 @@ std::string& ServerBlock::get_server_root(void)
 
 void ServerBlock::set_host(std::string set_host)
 {
-    // std::cout << "set host called for : " << set_host << std::endl;
-    if (!Host.empty())
-        dupindex++;
     Host = set_host;
 }
 
@@ -80,21 +66,17 @@ std::string& ServerBlock::get_host(void)
 
 void ServerBlock::set_port(int set_port)
 {
-    // if (Port != -1)
-    //     dupindex++;
     if (set_port > 0)
         Port.push_back(set_port);
 }
 
- std::vector <int> ServerBlock::get_port(void)
+std::vector <int> ServerBlock::get_port(void)
 {
     return Port;
 }
 
 void ServerBlock::set_server_names(std::string set_server_names)
 {
-    if (!Server_names.empty())
-        dupindex++;
     Server_names = set_server_names;
     
 }
@@ -150,16 +132,6 @@ std::vector<RouteBlock> ServerBlock::get_routes(void)
 }
 
 
-
-
-
-
-
-
-
-
-
-
 bool ServerBlock::is_valid_method(std::string path, std::string method)
 {
     int i = 0;
@@ -182,8 +154,6 @@ bool ServerBlock::is_valid_method(std::string path, std::string method)
         }
         i++;
     }
-    // std::cout  <<  "nOOOOOOOOOOOOOOO " << std::endl;
-
     return true;
 }
 
@@ -216,8 +186,6 @@ std::string ServerBlock::find_error_page_path(int n){
     (void)n;
     while (it != error_pages.end())
     {
-        // std::cout << it->first << std::endl;
-        // std::cout << it->second << std::endl;
         if(it->first == n)
             return it->second;
         ++it;
@@ -230,4 +198,10 @@ void ServerBlock::set_dafault_data()
     Host = "127.0.0.1";   
     Port.push_back(8080);
     Server_names = "test.com";
+}
+
+void ServerBlock::update_server_info(RouteBlock &route)
+{
+    server_root = route.get_root();
+    index = route.get_index();
 }
