@@ -38,7 +38,14 @@ void Response::set_response_status(int index)
     response_status = index;
 }
 
-Response::~Response() {};
+Response::~Response() {
+    if (fileStream != NULL) {
+        fileStream->close();
+        delete fileStream;
+        fileStream = NULL;
+    }
+
+};
 
 Response::Response()
 {

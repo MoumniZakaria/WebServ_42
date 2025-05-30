@@ -161,7 +161,12 @@ void Server::closeClientConnection(size_t index) {
                 break;
             }
         }
-        
+        Request *request = &clients[client_index].get_request();
+        delete request;
+        request = NULL;
+        Response *response = &clients[client_index].get_response();
+        delete response;
+        response = NULL;
         clients.erase(clients.begin() + client_index);
         std::cout << "\033[31mClosing client connection. Socket FD: " << client_fd << "\033[0m" << std::endl;
         close(client_fd);

@@ -90,9 +90,11 @@ void Client::reset() {
 Client::~Client(){
     // if (request_object) {
     //     delete request_object;
+    //     request_object = NULL;
     // }
     // if (response_object) {
     //     delete response_object;
+    //     response_object = NULL;
     // }
     // std::cout << "Client destroyed with fd: " << client_id << std::endl;
 }
